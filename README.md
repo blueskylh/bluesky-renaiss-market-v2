@@ -102,7 +102,7 @@ flowchart LR
 
 ![Renaiss Market v2 UI Preview](./docs/assets/renaiss-market-preview.png)
 
-> 当前图片为实际运行验收截图，展示挂牌价、Index 价格、价差、ROI、confidence 与外部链接。
+> 当前图片为实际运行验收截图，展示挂牌价、Index 价格、价差、匹配质量与外部链接。
 > Demo 在线地址会在完成部署后补充。
 
 Dashboard 当前展示：
@@ -112,11 +112,12 @@ Dashboard 当前展示：
 - 已挂牌卡牌数量
 - 挂牌总价值
 - 已有 Index 价格的卡牌数量
-- 可套利总价值：全市场当前挂牌卡牌的正价差之和
-- Renaiss 挂牌价
+- 理论价差总额：全市场当前挂牌卡牌的正价差之和
+- Renaiss 当前挂牌价
 - Index 美元参考价（不显示美分原始值）
-- 价差与 ROI 独立可排序列（点击切换升序 / 降序，默认 ROI 降序）
-- Index `confidence`
+- 价差排序（默认从高到低）
+- Index 匹配质量（`confidence`）
+- 首次使用引导：解释价差、卡牌核对和外部链接验证流程
 - 最近成交 / 更新时间
 - Renaiss 链接与 Index 链接
 
