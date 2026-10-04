@@ -1,24 +1,56 @@
-const SURF_LOGO_PATH = "M14.6875 13.333C15.0977 13.333 15.4859 13.5196 15.7422 13.8398L17.8721 16.502C17.9009 16.538 17.9308 16.5721 17.9619 16.6035C18.3091 16.9542 18.7529 17.3405 18.7529 17.834C18.7528 18.3399 18.3428 18.75 17.8369 18.75H17.5713C17.2123 18.75 16.8727 18.5869 16.6484 18.3066L15.4678 16.8311C14.761 15.9479 13.3369 16.4478 13.3369 17.5791V18.6494C13.3369 18.7062 13.2882 18.75 13.2314 18.75H11.3584C10.7127 18.75 10.1016 18.4564 9.69824 17.9521L8.80176 16.8311C8.09497 15.9477 6.66993 16.4478 6.66992 17.5791V18.6494C6.66991 18.7062 6.62124 18.75 6.56445 18.75H4.69141C4.04589 18.75 3.43548 18.4562 3.03223 17.9521L2.13477 16.8311C1.77885 16.3862 1.25293 15.931 1.25293 15.3613V13.4395C1.253 13.3822 1.29729 13.3331 1.35449 13.333C1.7646 13.3332 2.15295 13.5196 2.40918 13.8398L4.53809 16.502C5.24478 17.3853 6.66962 16.886 6.66992 15.7549V14.6836C6.67018 13.9379 7.27483 13.3332 8.02051 13.333C8.43065 13.333 8.81884 13.5197 9.0752 13.8398L11.2051 16.502C11.9097 17.3827 13.3282 16.8887 13.3369 15.7646V14.6836C13.3372 13.9378 13.9417 13.3331 14.6875 13.333ZM14.6875 6.66699C15.0978 6.66702 15.4859 6.85347 15.7422 7.17383L17.8721 9.83594C18.2276 10.2801 18.7526 10.7339 18.7529 11.3027V13.2266C18.7528 13.2833 18.7091 13.333 18.6523 13.333C18.2421 13.3329 17.8539 13.1465 17.5977 12.8262L15.4678 10.1641C14.7609 9.28113 13.3369 9.78089 13.3369 10.9121V11.9824C13.3369 12.7282 12.7321 13.3328 11.9863 13.333C11.5761 13.3329 11.187 13.1465 10.9307 12.8262L8.80176 10.1641C8.09497 9.28072 6.66993 9.78076 6.66992 10.9121V11.9824C6.66992 12.7284 6.06525 13.3329 5.31934 13.333C4.90908 13.3329 4.52094 13.1465 4.26465 12.8262L2.13477 10.1641C1.7788 9.71925 1.25293 9.26403 1.25293 8.69434V6.77344C1.253 6.71621 1.29728 6.6671 1.35449 6.66699C1.76461 6.66714 2.15295 6.85359 2.40918 7.17383L4.53809 9.83594C5.24487 10.7193 6.66989 10.2192 6.66992 9.08789V8.01758C6.66992 7.27168 7.27467 6.66722 8.02051 6.66699C8.43082 6.66699 8.81885 6.85345 9.0752 7.17383L11.2051 9.83594C11.9097 10.7163 13.3279 10.2223 13.3369 9.09863V8.01758C13.3369 7.27161 13.9416 6.6671 14.6875 6.66699ZM2.43555 1.25C2.79488 1.25 3.13499 1.41367 3.35938 1.69434L4.53809 3.16895C5.24485 4.05241 6.66991 3.55228 6.66992 2.4209V1.35059C6.66993 1.29391 6.71874 1.25017 6.77539 1.25H8.64844C9.29394 1.25 9.90438 1.5438 10.3076 2.04785L11.2051 3.16895C11.9097 4.04967 13.3282 3.55564 13.3369 2.43164V1.35059C13.3369 1.29391 13.3857 1.25017 13.4424 1.25H15.3154C15.9609 1.25 16.5714 1.5438 16.9746 2.04785L17.8721 3.16895C18.2275 3.61314 18.7526 4.06689 18.7529 4.63574V6.56055C18.7528 6.61728 18.7091 6.66699 18.6523 6.66699C18.2421 6.66688 17.8539 6.4795 17.5977 6.15918L15.4678 3.49805C14.761 2.61474 13.3371 3.11388 13.3369 4.24512V5.31543C13.3369 6.06126 12.7321 6.66673 11.9863 6.66699C11.5761 6.66693 11.187 6.47955 10.9307 6.15918L8.80176 3.49805C8.095 2.61474 6.67006 3.11388 6.66992 4.24512V5.31543C6.66992 6.06137 6.06525 6.66691 5.31934 6.66699C4.90908 6.66693 4.52094 6.47955 4.26465 6.15918L2.13477 3.49805C2.10558 3.46158 2.07543 3.42725 2.04395 3.39551C1.6966 3.04528 1.25293 2.6583 1.25293 2.16504C1.25317 1.65963 1.66348 1.25 2.16895 1.25H2.43555Z"
+import { useCallback, useEffect, useState } from 'react'
+import { api } from './lib/api'
 
-function SurfLogo() {
-  return (
-    <svg width="40" height="40" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d={SURF_LOGO_PATH} fill="var(--fg-base, #212121)" />
-    </svg>
-  )
-}
+type Confidence = 'prime' | 'high' | 'medium' | 'low'
+type Card = { token_id:string; name:string; set_name:string; card_number:string; serial?:string|null; front_image_url?:string|null; ask_price_usdt:number; priceUsdCents:number|null; indexPriceUsd:number|null; spreadUsd:number|null; roiPct:number|null; confidence:Confidence|null; renaissUrl?:string|null; indexUrl?:string|null; last_sale_at?:string|null; observed_at?:string|null }
+type Stats = { withAskPrice:number; totalValue:number; withIndexPrice:number; opportunities:number }
 
-// Frontend API calls should use `src/lib/api.ts`, not absolute `/api/...` URLs.
+const money = (n:number|null|undefined) => n == null || !Number.isFinite(n) ? '—' : `$${n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
+const percent = (n:number|null|undefined) => n == null || !Number.isFinite(n) ? '—' : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`
+const time = (s:string|null|undefined) => s ? new Date(s).toLocaleString() : '—'
+const badge:Record<string,string> = { prime:'bg-emerald-400/15 text-emerald-300', high:'bg-blue-400/15 text-blue-300', medium:'bg-amber-400/15 text-amber-300', low:'bg-red-400/15 text-red-300' }
+
 export default function App() {
-  return (
-    <div data-surf-placeholder className="min-h-screen flex flex-col items-center justify-center gap-4 rounded-[14px]" style={{ background: 'var(--bg-chat-nav, #f4f4f4)', border: '1px solid var(--border-strong, rgba(42,42,42,0.08))' }}>
-      <SurfLogo />
-      <h1 className="font-black text-[36px] leading-[44px] text-[var(--fg-base,#212121)]">
-        GM, Builder<span style={{ color: 'var(--brand-100, #ff2882)' }}>.</span>
-      </h1>
-      <p className="text-xl leading-7 text-[var(--fg-subtle,#7a7a7a)]">
-        Start your crypto project here!
-      </p>
-    </div>
-  )
+  const [cards,setCards] = useState<Card[]>([])
+  const [stats,setStats] = useState<Stats|null>(null)
+  const [lastSync,setLastSync] = useState<any>(null)
+  const [loading,setLoading] = useState(true)
+  const [syncing,setSyncing] = useState(false)
+  const [error,setError] = useState('')
+  const [search,setSearch] = useState('')
+  const [confidence,setConfidence] = useState('')
+  const [onlyOpp,setOnlyOpp] = useState(true)
+  const [page,setPage] = useState(0)
+  const limit = 100
+
+  const load = useCallback(async () => {
+    setLoading(true); setError('')
+    try {
+      const q = new URLSearchParams({limit:String(limit),offset:String(page*limit)})
+      if(search.trim()) q.set('search',search.trim())
+      if(confidence) q.set('confidence',confidence)
+      if(onlyOpp) q.set('onlyOpportunities','true')
+      const [a,b,c] = await Promise.all([fetch(api(`market/collectibles?${q}`)),fetch(api('market/stats')),fetch(api('market/sync-status'))])
+      if(!a.ok) throw new Error('市场数据加载失败')
+      setCards((await a.json()).collection || [])
+      if(b.ok) setStats(await b.json())
+      if(c.ok) setLastSync(await c.json())
+    } catch(e) { setError(e instanceof Error ? e.message : '加载失败') } finally { setLoading(false) }
+  },[page,search,confidence,onlyOpp])
+  useEffect(()=>{ void load() },[load])
+
+  async function sync() {
+    setSyncing(true); setError('')
+    try { const r=await fetch(api('sync'),{method:'POST'}); const d=await r.json(); if(!r.ok) throw new Error(d.error || '同步失败'); await load() }
+    catch(e) { setError(e instanceof Error ? e.message : '同步失败') }
+    finally { setSyncing(false) }
+  }
+
+  return <main className="min-h-screen bg-[#0b0e14] text-slate-100"><div className="mx-auto max-w-[1600px] px-5 py-8 lg:px-8">
+    <header className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><div className="mb-2 text-sm font-bold uppercase tracking-[.18em] text-pink-400">Renaiss Market v2</div><h1 className="text-3xl font-black md:text-4xl">跨市场套利监控</h1><p className="mt-2 text-sm text-slate-400">Renaiss 当前挂牌价 vs Renaiss Index <code>priceUsdCents</code>，保留 Index confidence 置信度。</p></div><div className="flex gap-3"><a href="https://index.renaissos.com" target="_blank" rel="noreferrer" className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-400">打开 Index ↗</a><button onClick={()=>void sync()} disabled={syncing} className="rounded-lg bg-pink-500 px-4 py-2 text-sm font-bold hover:bg-pink-400 disabled:opacity-50">{syncing?'同步中…':'立即同步'}</button></div></header>
+    <section className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{[['已挂牌卡牌',stats?.withAskPrice||0],['挂牌总价值',money(stats?.totalValue)],['已有 Index 价格',stats?.withIndexPrice||0],['套利候选',stats?.opportunities||0]].map(([a,b])=><div key={String(a)} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4"><div className="text-xs uppercase tracking-widest text-slate-500">{a}</div><div className="mt-2 text-2xl font-black">{typeof b==='number'?b.toLocaleString():b}</div></div>)}</section>
+    <section className="mb-5 rounded-2xl border border-slate-800 bg-slate-900/70 p-4"><div className="flex flex-col gap-3 lg:flex-row"><input value={search} onChange={e=>{setPage(0);setSearch(e.target.value)}} placeholder="搜索名称、Token ID 或 Serial" className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-pink-400"/><select value={confidence} onChange={e=>{setPage(0);setConfidence(e.target.value)}} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"><option value="">所有置信度</option><option value="prime">Prime</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={onlyOpp} onChange={e=>{setPage(0);setOnlyOpp(e.target.checked)}} className="accent-pink-500"/>只看套利候选</label><button onClick={()=>void load()} className="rounded-lg border border-slate-700 px-4 py-2 text-sm">刷新</button></div>{error&&<div className="mt-3 rounded-lg bg-red-950/50 px-3 py-2 text-sm text-red-300">{error}</div>}</section>
+    <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70"><div className="flex justify-between border-b border-slate-800 px-5 py-4"><div><h2 className="font-bold">套利候选</h2><p className="mt-1 text-xs text-slate-500">价差 = Renaiss Index 参考价 − Renaiss 当前挂牌价</p></div><div className="text-xs text-slate-500">最后同步：{time(lastSync?.finished_at)}</div></div>{loading?<div className="p-10 text-center text-slate-500">加载中…</div>:cards.length===0?<div className="p-10 text-center text-slate-500">没有符合条件的卡牌。</div>:<div className="overflow-x-auto"><table className="min-w-[1080px] w-full text-left text-sm"><thead className="bg-slate-950/60 text-xs uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">卡牌</th><th className="px-3 py-3">Renaiss 挂牌</th><th className="px-3 py-3">Index priceUsdCents</th><th className="px-3 py-3">价差 / ROI</th><th className="px-3 py-3">confidence</th><th className="px-3 py-3">更新时间</th><th className="px-5 py-3">链接</th></tr></thead><tbody className="divide-y divide-slate-800/80">{cards.map(card=><tr key={card.token_id} className="hover:bg-slate-800/35"><td className="px-5 py-4"><div className="flex min-w-[310px] items-center gap-3">{card.front_image_url?<img src={card.front_image_url} alt="" className="h-14 w-10 rounded object-cover"/>:<div className="h-14 w-10 rounded bg-slate-800"/>}<div className="min-w-0"><div className="truncate font-semibold" title={card.name}>{card.name}</div><div className="mt-1 text-xs text-slate-500">{card.set_name||'—'} · #{card.card_number||'—'} · {card.serial||'未识别证书'}</div></div></div></td><td className="px-3 py-4 font-mono">{money(card.ask_price_usdt)}</td><td className="px-3 py-4"><div className="font-mono font-semibold text-emerald-300">{money(card.indexPriceUsd)}</div><div className="mt-1 text-xs text-slate-500">{card.priceUsdCents==null?'无价格':`${card.priceUsdCents} cents`}</div></td><td className="px-3 py-4"><div className="font-mono font-bold text-emerald-300">{money(card.spreadUsd)}</div><div className="mt-1 text-xs text-emerald-400">{percent(card.roiPct)} ROI</div></td><td className="px-3 py-4">{card.confidence?<span className={`rounded-full px-2.5 py-1 text-xs font-bold ${badge[card.confidence]||'bg-slate-800 text-slate-300'}`}>{card.confidence}</span>:'—'}</td><td className="px-3 py-4 text-xs text-slate-500">{time(card.last_sale_at||card.observed_at)}</td><td className="px-5 py-4"><div className="flex gap-2 whitespace-nowrap">{card.renaissUrl&&<a href={card.renaissUrl} target="_blank" rel="noreferrer" className="rounded border border-slate-700 px-2 py-1 text-xs hover:border-pink-400">Renaiss ↗</a>}{card.indexUrl&&<a href={card.indexUrl} target="_blank" rel="noreferrer" className="rounded border border-slate-700 px-2 py-1 text-xs hover:border-cyan-400">Index ↗</a>}</div></td></tr>)}</tbody></table></div>}<div className="flex justify-between border-t border-slate-800 px-5 py-3"><span className="text-xs text-slate-500">第 {page+1} 页</span><div className="flex gap-2"><button disabled={!page} onClick={()=>setPage(p=>Math.max(0,p-1))} className="rounded border border-slate-700 px-3 py-1 text-xs disabled:opacity-40">上一页</button><button disabled={cards.length<limit} onClick={()=>setPage(p=>p+1)} className="rounded border border-slate-700 px-3 py-1 text-xs disabled:opacity-40">下一页</button></div></div></section>
+    <footer className="mt-5 flex justify-between text-xs text-slate-600"><span>每日 UTC 03:00 自动同步，部署平台 Cron 负责触发。</span><span>priceUsdCents ÷ 100 = USD</span></footer>
+  </div></main>
 }

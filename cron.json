@@ -1,0 +1,10 @@
+[
+  {
+    "id": "renaiss-market-daily-sync",
+    "name": "Renaiss market daily sync",
+    "schedule": "0 3 * * *",
+    "handler": "cron/daily-sync.js",
+    "enabled": true,
+    "timeout": 1800
+  }
+]
