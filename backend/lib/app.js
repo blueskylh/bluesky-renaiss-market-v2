@@ -168,6 +168,11 @@ function normalizeIndex(payload, method) {
   }
 }
 
+function gradeNumber(value) {
+  const match = String(value || '').match(/(?:^|\s)(\d+(?:\.\d+)?)(?:\s|$)/)
+  return match ? Number(match[1]) : null
+}
+
 function chooseSearch(results, card) {
   let best = null
   for (const item of Array.isArray(results) ? results : []) {
@@ -175,15 +180,40 @@ function chooseSearch(results, card) {
     if (card.cardNumber && normal(item.cardNumber) === normal(card.cardNumber)) score += 100
     if (card.pokemonName && normal(item.name).includes(normal(card.pokemonName))) score += 45
     if (card.language && normal(item.language) === normal(card.language)) score += 20
+
+    // A fallback search must not turn a PSA/CGC/BGS card into another grade.
+    // The live data exposed this failure mode for a CGC 8.5 card matching a PSA 10 result.
+    if (card.gradingCompany) {
+      if (normal(item.company) !== normal(card.gradingCompany)) continue
+      score += 25
+    }
+    if (card.grade) {
+      const itemGrade = gradeNumber(item.grade)
+      if (itemGrade == null || itemGrade !== Number(card.grade)) continue
+      score += 25
+    }
+
     if (item.priceUsdCents != null) score += 5
     if (!best || score > best.score) best = { item, score }
   }
   return best && best.score >= 100 ? best.item : null
 }
 
+function identityMatches(item, card) {
+  if (!item) return false
+  if (card.cardNumber && normal(item.cardNumber) !== normal(card.cardNumber)) return false
+  if (card.gradingCompany && normal(item.company) !== normal(card.gradingCompany)) return false
+  if (card.grade && gradeNumber(item.grade) !== Number(card.grade)) return false
+  return true
+}
+
 async function lookupIndex(card) {
   if (card.serial) {
-    const result = normalizeIndex(await getJson(`${INDEX_API_BASE}/v1/graded/${encodeURIComponent(card.serial)}`, 'index', indexHeaders()), 'cert')
+    const payload = await getJson(`${INDEX_API_BASE}/v1/graded/${encodeURIComponent(card.serial)}`, 'index', indexHeaders())
+    const item = payload?.item || payload?.card || null
+    const result = identityMatches(item, card)
+      ? normalizeIndex(payload, 'cert')
+      : { status:'not_found', matchMethod:'cert', errorMessage:'Index identity did not match the Renaiss card', rawJson:JSON.stringify(payload) }
     if (result.status === 'matched') return result
   }
   const query = [card.pokemonName, card.cardNumber && `#${card.cardNumber}`, card.setName].filter(Boolean).join(' ').slice(0, 80)
@@ -300,4 +330,4 @@ async function runDailySync() {
   }
 }
 
-module.exports = { getCollectibles, getStats, getLastSync, getOne, runDailySync, getSyncState: () => activeRun }
+module.exports = { getCollectibles, getStats, getLastSync, getOne, runDailySync, getSyncState: () => activeRun, chooseSearch, identityMatches }
