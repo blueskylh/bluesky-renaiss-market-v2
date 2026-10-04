@@ -12,6 +12,7 @@ type Card = {
   name:string
   set_name:string
   card_number:string
+  language?:string|null
   serial?:string|null
   front_image_url?:string|null
   ask_price_usdt:number
@@ -116,6 +117,7 @@ const badge:Record<string,string> = { prime:'bg-emerald-400/15 text-emerald-300'
 export default function App() {
   const [language,setLanguage] = useState<Language>('zh-CN')
   const [cards,setCards] = useState<Card[]>([])
+  const [totalResults,setTotalResults] = useState(0)
   const [stats,setStats] = useState<Stats|null>(null)
   const [lastSync,setLastSync] = useState<any>(null)
   const [loading,setLoading] = useState(true)
@@ -144,37 +146,45 @@ export default function App() {
       if(search.trim()) q.set('search',search.trim())
       if(confidence) q.set('confidence',confidence)
       if(onlyOpp) q.set('onlyOpportunities','true')
-      const [a,b,c] = await Promise.all([fetch(api(`market/collectibles?${q}`),{signal}),fetch(api('market/stats'),{signal}),fetch(api('market/sync-status'),{signal})])
+      const [a,b,c] = await Promise.all([
+        fetch(api(`market/collectibles?${q}`),{signal}),
+        fetch(api('market/stats'),{signal}),
+        fetch(api('market/sync-status'),{signal}),
+      ])
       if(!a.ok) throw new Error(t.marketLoadError)
       const [collection,nextStats,nextSync] = await Promise.all([a.json(),b.ok?b.json():null,c.ok?c.json():null])
       if(signal.aborted) return
       setCards(collection.collection || [])
+      setTotalResults(Number(collection.total || 0))
       setStats(nextStats)
       setLastSync(nextSync)
-    } catch(e) { if(!signal.aborted) setError(e instanceof Error ? e.message : t.marketLoadError) } finally { if(!signal.aborted) setLoading(false) }
+    } catch(e) {
+      if(!signal.aborted) setError(e instanceof Error ? e.message : t.marketLoadError)
+    } finally {
+      if(!signal.aborted) setLoading(false)
+    }
   },[page,search,confidence,onlyOpp,t.marketLoadError,sort.key,sort.order])
-  useEffect(()=>{ void load(); return ()=>requestController.current?.abort() },[load])
 
-  const toggleSort = (key:SortKey) => {
-    setPage(0)
-    setSort(current=>({key,order:current.key===key && current.order==='desc'?'asc':'desc'}))
-  }
+  useEffect(()=>{
+    void load()
+    return ()=>requestController.current?.abort()
+  },[load])
+
   const updateImagePreview = (event:{clientX:number;clientY:number}, src:string, alt:string) => {
     if(typeof window === 'undefined') return
-    const width = 240
-    const height = 330
+    const width = 260
+    const height = 360
     const gap = 20
     const left = Math.min(event.clientX + gap, Math.max(gap, window.innerWidth - width - gap))
     const top = Math.min(event.clientY + gap, Math.max(gap, window.innerHeight - height - gap))
     setImagePreview({src,alt,left,top})
   }
-  const sortHeading = (key:SortKey,label:string) => (
-    <th scope="col" className="px-3 py-3" aria-sort={sort.key===key?(sort.order==='asc'?'ascending':'descending'):'none'}>
-      <button type="button" onClick={()=>toggleSort(key)} className="inline-flex items-center gap-1.5 whitespace-nowrap rounded text-left hover:text-pink-300 focus-visible:outline-2 focus-visible:outline-pink-400" aria-label={`${label}: ${sort.key===key && sort.order==='desc'?t.sortAscending:t.sortDescending}`}>
-        {label}<span aria-hidden="true" className={sort.key===key?'text-pink-400':'text-slate-500'}>{sort.key===key?(sort.order==='asc'?'↑':'↓'):'↕'}</span>
-      </button>
-    </th>
-  )
+
+  const setSortValue = (value:string) => {
+    const [key,order] = value.split(':') as [SortKey,SortOrder]
+    setPage(0)
+    setSort({key,order})
+  }
 
   const statsItems:[string,string|number][] = [
     [t.listedCards,stats?.withAskPrice||0],
@@ -183,12 +193,69 @@ export default function App() {
     [t.arbitrageValue,money(stats?.arbitrageValueUsd,language)],
   ]
 
-  return <main className="min-h-screen bg-[#0b0e14] text-slate-100"><div className="mx-auto max-w-[1600px] px-5 py-8 lg:px-8">
-    <header className="mb-8 flex flex-col justify-between gap-6 xl:flex-row xl:items-end"><div className="flex items-start gap-4"><div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white shadow-[0_0_30px_rgba(236,72,153,.18)]"><img src={renaissLogo} alt="Renaiss logo" className="h-full w-full object-cover"/></div><div><div className="mb-2 text-sm font-bold uppercase tracking-[.18em] text-pink-400">Renaiss Market v2</div><h1 className="text-3xl font-black md:text-4xl">{t.title}</h1></div></div><div className="flex flex-wrap items-center gap-2"><label className="sr-only" htmlFor="language-select">{t.language}</label><select id="language-select" value={language} onChange={e=>setLanguage(e.target.value as Language)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-300 outline-none transition hover:border-slate-400 focus:border-pink-400">{languageOptions.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select><a href="https://www.renaiss.xyz/ref/blueskyone" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-fuchsia-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-pink-500/20 transition hover:-translate-y-0.5 hover:from-pink-400 hover:to-fuchsia-400"><img src={renaissLogo} alt="" className="h-5 w-5 rounded bg-white object-cover"/>{t.register} ↗</a><a href="https://x.com/blueskylh1" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-sky-400/35 bg-sky-400/10 px-3.5 py-2.5 text-sm font-semibold text-sky-100 transition hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-400/20"><img src={blueskylhAvatar} alt="blueskylh1 avatar" className="h-6 w-6 rounded-full object-cover ring-1 ring-sky-300/50"/><span><span className="block text-[10px] uppercase tracking-wider text-sky-300">{t.follow}</span><span className="block leading-none">@blueskylh1 ↗</span></span></a><a href="https://github.com/blueskylh/bluesky-renaiss-market-v2" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-700 px-4 py-2.5 text-sm text-slate-300 transition hover:-translate-y-0.5 hover:border-slate-400">{t.github} ↗</a><a href="https://renaiss-tool-689931.napa.de5.net/" target="_blank" rel="noreferrer" className="rounded-xl border border-emerald-400/35 bg-emerald-400/10 px-4 py-2.5 text-sm font-semibold text-emerald-100 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-400/20">{t.serialTool} ↗</a><button onClick={()=>void load()} className="rounded-xl border border-slate-700 px-4 py-2.5 text-sm font-bold text-slate-200 transition hover:-translate-y-0.5 hover:border-pink-400 hover:text-white">{t.refresh}</button></div></header>
-    <section className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{statsItems.map(([label,value])=><div key={String(label)} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4"><div className="text-xs uppercase tracking-widest text-slate-500">{label}</div><div className="mt-2 text-2xl font-black">{typeof value==='number'?value.toLocaleString(locales[language]):value}</div></div>)}</section>
-    <section className="mb-5 rounded-2xl border border-slate-800 bg-slate-900/70 p-4"><div className="flex flex-col gap-3 lg:flex-row"><input value={search} onChange={e=>{setPage(0);setSearch(e.target.value)}} placeholder={t.searchPlaceholder} className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-pink-400"/><select value={confidence} aria-label={t.allConfidence} onChange={e=>{setPage(0);setConfidence(e.target.value)}} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"><option value="">{t.allConfidence}</option>{(['prime','high','medium','low'] as Confidence[]).map(item=><option key={item} value={item}>{confidenceLabels[language][item]}</option>)}</select><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={onlyOpp} onChange={e=>{setPage(0);setOnlyOpp(e.target.checked)}} className="accent-pink-500"/>{t.onlyOpportunities}</label><button onClick={()=>void load()} className="rounded-lg border border-slate-700 px-4 py-2 text-sm">{t.refresh}</button></div>{error&&<div className="mt-3 rounded-lg bg-red-950/50 px-3 py-2 text-sm text-red-300">{error}</div>}</section>
-    <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70"><div className="flex justify-between border-b border-slate-800 px-5 py-4"><div><h2 className="font-bold">{t.sectionTitle}</h2><p className="mt-1 text-xs text-slate-500">{t.spreadFormula}</p></div><div className="text-xs text-slate-500">{t.lastSync}：{time(lastSync?.finished_at,language)}</div></div>{loading?<div className="p-10 text-center text-slate-500">{t.loading}</div>:cards.length===0?<div className="p-10 text-center text-slate-500">{t.empty}</div>:<div className="overflow-x-auto"><table className="min-w-[1200px] w-full text-left text-sm"><thead className="bg-slate-950/60 text-xs uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">{t.card}</th><th className="px-3 py-3">{t.askPrice}</th><th className="px-3 py-3">{t.indexPrice}</th>{sortHeading('spreadUsd',t.spread)}{sortHeading('roiPct',t.roi)}<th className="px-3 py-3">{t.confidence}</th><th className="px-3 py-3">{t.updated}</th><th className="px-5 py-3">{t.links}</th></tr></thead><tbody className="divide-y divide-slate-800/80">{cards.map(card=><tr key={card.token_id} className="hover:bg-slate-800/35"><td className="px-5 py-4"><div className="flex min-w-[310px] items-center gap-3">{card.front_image_url?<div className="h-14 w-10 shrink-0" onMouseLeave={()=>setImagePreview(null)}><img src={card.front_image_url} alt={card.name} onMouseEnter={event=>updateImagePreview(event,card.front_image_url!,card.name)} onMouseMove={event=>updateImagePreview(event,card.front_image_url!,card.name)} className="h-14 w-10 cursor-zoom-in rounded object-cover transition-transform duration-150 hover:scale-110"/></div>:<div className="h-14 w-10 shrink-0 rounded bg-slate-800"/>}<div className="min-w-0"><div className="truncate font-semibold" title={card.name}>{card.name}</div><div className="mt-1 text-xs text-slate-500">{card.set_name||'—'} · #{card.card_number||'—'} · {card.serial||t.unknownSerial}</div></div></div></td><td className="px-3 py-4 font-mono">{money(card.ask_price_usdt,language)}</td><td className="px-3 py-4"><div className="font-mono font-semibold text-emerald-300">{money(card.indexPriceUsd,language)}</div></td><td className={`px-3 py-4 font-mono font-bold ${(card.spreadUsd??0)<0?'text-red-300':'text-emerald-300'}`}>{money(card.spreadUsd,language)}</td><td className={`px-3 py-4 font-mono ${(card.roiPct??0)<0?'text-red-300':'text-emerald-400'}`}>{percent(card.roiPct)}</td><td className="px-3 py-4">{card.confidence?<span className={`rounded-full px-2.5 py-1 text-xs font-bold ${badge[card.confidence]||'bg-slate-800 text-slate-300'}`}>{confidenceLabels[language][card.confidence]}</span>:'—'}</td><td className="px-3 py-4 text-xs text-slate-500">{time(card.last_sale_at||card.observed_at,language)}</td><td className="px-5 py-4"><div className="flex gap-2 whitespace-nowrap">{card.renaissUrl&&<a href={card.renaissUrl} target="_blank" rel="noreferrer" className="rounded border border-slate-700 px-2 py-1 text-xs hover:border-pink-400">{t.renaissLink} ↗</a>}{card.indexUrl&&<a href={card.indexUrl} target="_blank" rel="noreferrer" className="rounded border border-slate-700 px-2 py-1 text-xs hover:border-cyan-400">{t.indexLink} ↗</a>}</div></td></tr>)}</tbody></table></div>}<div className="flex justify-between border-t border-slate-800 px-5 py-3"><span className="text-xs text-slate-500">{t.page.replace('{page}',String(page+1))}</span><div className="flex gap-2"><button disabled={!page} onClick={()=>setPage(p=>Math.max(0,p-1))} className="rounded border border-slate-700 px-3 py-1 text-xs disabled:opacity-40">{t.previous}</button><button disabled={cards.length<limit} onClick={()=>setPage(p=>p+1)} className="rounded border border-slate-700 px-3 py-1 text-xs disabled:opacity-40">{t.next}</button></div></div></section>
-    <footer className="mt-5 flex justify-between text-xs text-slate-600"><span>{t.cron}</span></footer>
-    {imagePreview&&<div className="pointer-events-none fixed z-[100] hidden rounded-2xl border border-pink-400/60 bg-slate-950/95 p-2 shadow-2xl shadow-pink-500/20 md:block" style={{left:imagePreview.left,top:imagePreview.top}}><img src={imagePreview.src} alt={imagePreview.alt} className="max-h-[320px] max-w-[224px] rounded-xl object-contain"/></div>}
-  </div></main>
+  return <main className="min-h-screen bg-[#0b0e14] text-slate-100">
+    <div className="mx-auto max-w-[1500px] px-5 py-7 lg:px-8 lg:py-9">
+      <header className="relative mb-8 overflow-hidden rounded-[28px] border border-fuchsia-400/15 bg-[radial-gradient(circle_at_78%_0%,rgba(217,70,239,.16),transparent_38%),linear-gradient(120deg,rgba(24,20,39,.98),rgba(20,15,29,.98))] px-6 py-6 shadow-2xl shadow-fuchsia-950/20 lg:px-8">
+        <div className="absolute -right-24 -top-32 h-72 w-72 rounded-full bg-fuchsia-500/10 blur-3xl" />
+        <div className="relative flex flex-col justify-between gap-6 xl:flex-row xl:items-center">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-white shadow-[0_0_30px_rgba(236,72,153,.2)]"><img src={renaissLogo} alt="Renaiss logo" className="h-full w-full object-cover"/></div>
+            <div>
+              <div className="mb-1 text-sm font-bold uppercase tracking-[.18em] text-pink-400">Renaiss Market v2</div>
+              <h1 className="text-3xl font-black tracking-tight md:text-4xl">{t.title}</h1>
+              <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-400">
+                <span className="rounded-full border border-slate-700/80 bg-slate-950/40 px-3 py-1.5">{t.lastSync}：{time(lastSync?.finished_at,language)}</span>
+                <span className="rounded-full border border-slate-700/80 bg-slate-950/40 px-3 py-1.5">{t.cron}</span>
+              </div>
+            </div>
+          </div>
+          <div className="relative flex flex-wrap items-center gap-2">
+            <label className="sr-only" htmlFor="language-select">{t.language}</label>
+            <select id="language-select" value={language} onChange={e=>setLanguage(e.target.value as Language)} className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2.5 text-sm text-slate-300 outline-none transition hover:border-slate-400 focus:border-pink-400">{languageOptions.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select>
+            <a href="https://www.renaiss.xyz/ref/blueskyone" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-fuchsia-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-pink-500/20 transition hover:-translate-y-0.5 hover:from-pink-400 hover:to-fuchsia-400"><img src={renaissLogo} alt="" className="h-5 w-5 rounded bg-white object-cover"/>{t.register} ↗</a>
+            <a href="https://x.com/blueskylh1" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-sky-400/35 bg-sky-400/10 px-3.5 py-2.5 text-sm font-semibold text-sky-100 transition hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-400/20"><img src={blueskylhAvatar} alt="blueskylh1 avatar" className="h-6 w-6 rounded-full object-cover ring-1 ring-sky-300/50"/><span><span className="block text-[10px] uppercase tracking-wider text-sky-300">{t.follow}</span><span className="block leading-none">@blueskylh1 ↗</span></span></a>
+            <a href="https://github.com/blueskylh/bluesky-renaiss-market-v2" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-700 bg-slate-950/30 px-4 py-2.5 text-sm text-slate-300 transition hover:-translate-y-0.5 hover:border-slate-400">{t.github} ↗</a>
+            <a href="https://renaiss-tool-689931.napa.de5.net/" target="_blank" rel="noreferrer" className="rounded-xl border border-emerald-400/35 bg-emerald-400/10 px-4 py-2.5 text-sm font-semibold text-emerald-100 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-400/20">{t.serialTool} ↗</a>
+            <button onClick={()=>void load()} className="rounded-xl border border-slate-700 bg-slate-950/30 px-4 py-2.5 text-sm font-bold text-slate-200 transition hover:-translate-y-0.5 hover:border-pink-400 hover:text-white">{t.refresh}</button>
+          </div>
+        </div>
+      </header>
+
+      <section className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {statsItems.map(([label,value])=><div key={String(label)} className="rounded-2xl border border-slate-800 bg-slate-900/75 p-5 shadow-lg shadow-black/10"><div className="text-xs uppercase tracking-widest text-slate-500">{label}</div><div className="mt-2 text-2xl font-black">{typeof value==='number'?value.toLocaleString(locales[language]):value}</div></div>)}
+      </section>
+
+      <section className="mb-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg shadow-black/10">
+        <div className="flex flex-col gap-3 xl:flex-row">
+          <input value={search} onChange={e=>{setPage(0);setSearch(e.target.value)}} placeholder={t.searchPlaceholder} className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm outline-none transition focus:border-pink-400"/>
+          <select value={confidence} aria-label={t.allConfidence} onChange={e=>{setPage(0);setConfidence(e.target.value)}} className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-3 text-sm"><option value="">{t.allConfidence}</option>{(['prime','high','medium','low'] as Confidence[]).map(item=><option key={item} value={item}>{confidenceLabels[language][item]}</option>)}</select>
+          <select value={`${sort.key}:${sort.order}`} aria-label={t.roi} onChange={e=>setSortValue(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-3 text-sm"><option value="roiPct:desc">{t.roi} ↓</option><option value="roiPct:asc">{t.roi} ↑</option><option value="spreadUsd:desc">{t.spread} ↓</option><option value="spreadUsd:asc">{t.spread} ↑</option></select>
+          <label className="flex items-center gap-2 rounded-xl border border-transparent px-1 text-sm whitespace-nowrap"><input type="checkbox" checked={onlyOpp} onChange={e=>{setPage(0);setOnlyOpp(e.target.checked)}} className="h-4 w-4 accent-pink-500"/>{t.onlyOpportunities}</label>
+          <button onClick={()=>void load()} className="rounded-xl border border-slate-700 px-4 py-3 text-sm transition hover:border-pink-400">{t.refresh}</button>
+        </div>
+        {error&&<div className="mt-3 rounded-xl bg-red-950/50 px-4 py-3 text-sm text-red-300">{error}</div>}
+      </section>
+
+      <section>
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3 px-1">
+          <div><div className="flex items-center gap-2"><span className="text-xl text-fuchsia-400">ϟ</span><h2 className="text-xl font-black">{t.sectionTitle}</h2><span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1 text-xs font-bold text-emerald-300">{totalResults}</span></div><p className="mt-1 text-sm text-slate-500">{t.spreadFormula}</p></div>
+          <div className="text-xs text-slate-500">{t.page.replace('{page}',String(page+1))}</div>
+        </div>
+        {loading?<div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-16 text-center text-slate-500">{t.loading}</div>:cards.length===0?<div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-16 text-center text-slate-500">{t.empty}</div>:<div className="grid gap-5 xl:grid-cols-2">{cards.map((card,index)=>{
+          const positive = (card.spreadUsd ?? 0) >= 0
+          return <article key={card.token_id} className="group/card rounded-3xl border border-slate-800 bg-[linear-gradient(135deg,rgba(19,24,40,.98),rgba(14,17,27,.98))] p-5 shadow-xl shadow-black/15 transition duration-200 hover:-translate-y-0.5 hover:border-fuchsia-400/35 hover:shadow-fuchsia-950/20">
+            <div className="mb-5 flex items-start justify-between gap-3"><div className="flex items-center gap-2"><span className="text-xs font-mono text-slate-600">#{page*limit+index+1}</span><span className="text-lg text-fuchsia-400">ϟ</span><span className="rounded-full border border-fuchsia-400/30 bg-fuchsia-400/10 px-2.5 py-1 text-xs font-bold text-fuchsia-200">{t.sectionTitle}</span></div><div className="flex flex-wrap justify-end gap-2"><span className={`rounded-full px-3 py-1 text-xs font-black ${positive?'bg-emerald-400/15 text-emerald-300':'bg-red-400/15 text-red-300'}`}>{t.spread} {money(card.spreadUsd,language)}</span><span className={`rounded-full px-3 py-1 text-xs font-black ${positive?'bg-fuchsia-400/15 text-fuchsia-200':'bg-red-400/15 text-red-300'}`}>{t.roi} {percent(card.roiPct)}</span></div></div>
+            <div className="flex flex-col gap-5 sm:flex-row">
+              <div className="flex shrink-0 justify-center sm:w-36 sm:items-start"><div className="relative flex h-56 w-36 items-center justify-center overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-950/70 p-2 shadow-inner shadow-black/50" onMouseLeave={()=>setImagePreview(null)}>{card.front_image_url?<img src={card.front_image_url} alt={card.name} onMouseEnter={event=>updateImagePreview(event,card.front_image_url!,card.name)} onMouseMove={event=>updateImagePreview(event,card.front_image_url!,card.name)} className="h-full w-full cursor-zoom-in rounded-xl object-contain transition-transform duration-200 group-hover/card:scale-[1.02]"/>:<div className="h-full w-full rounded-xl bg-slate-800"/>}<span className="pointer-events-none absolute bottom-2 left-2 rounded-full bg-slate-950/80 px-2 py-1 text-[10px] text-slate-400">⌕</span></div></div>
+              <div className="min-w-0 flex-1"><h3 className="text-lg font-bold leading-snug text-slate-100" title={card.name}>{card.name}</h3><p className="mt-2 text-sm text-slate-400">{card.set_name||'—'} · #{card.card_number||'—'}</p><p className="mt-1 truncate text-xs font-mono text-slate-500">{card.serial||t.unknownSerial}</p><div className="mt-3 flex flex-wrap gap-2">{card.confidence&&<span className={`rounded-full px-2.5 py-1 text-xs font-bold ${badge[card.confidence]||'bg-slate-800 text-slate-300'}`}>{confidenceLabels[language][card.confidence]}</span>}<span className="rounded-full border border-slate-700 px-2.5 py-1 text-xs text-slate-400">{card.language||'—'}</span></div><div className="mt-5 grid grid-cols-2 gap-3"><div className="rounded-2xl border border-slate-800 bg-slate-950/45 p-3"><div className="text-xs text-slate-500">{t.askPrice}</div><div className="mt-1 font-mono text-lg font-bold text-slate-100">{money(card.ask_price_usdt,language)}</div></div><div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-3"><div className="text-xs text-slate-500">{t.indexPrice}</div><div className="mt-1 font-mono text-lg font-bold text-emerald-300">{money(card.indexPriceUsd,language)}</div></div></div><div className="mt-4 flex flex-wrap gap-2"><div className="rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-400">{t.updated}：{time(card.last_sale_at||card.observed_at,language)}</div></div><div className="mt-5 flex flex-wrap gap-2"><a href={card.renaissUrl||'#'} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold transition hover:border-pink-400">{t.renaissLink} ↗</a>{card.indexUrl&&<a href={card.indexUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold transition hover:border-cyan-400">{t.indexLink} ↗</a>}</div></div>
+            </div>
+          </article>
+        })}</div>}
+        <div className="mt-5 flex justify-end gap-2"><button disabled={!page} onClick={()=>setPage(p=>Math.max(0,p-1))} className="rounded-xl border border-slate-700 px-4 py-2 text-sm disabled:opacity-40">{t.previous}</button><button disabled={cards.length<limit} onClick={()=>setPage(p=>p+1)} className="rounded-xl border border-slate-700 px-4 py-2 text-sm disabled:opacity-40">{t.next}</button></div>
+      </section>
+
+      <footer className="mt-7 flex justify-between text-xs text-slate-600"><span>{t.cron}</span></footer>
+      {imagePreview&&<div className="pointer-events-none fixed z-[100] hidden rounded-2xl border border-pink-400/60 bg-slate-950/95 p-2 shadow-2xl shadow-pink-500/20 md:block" style={{left:imagePreview.left,top:imagePreview.top}}><img src={imagePreview.src} alt={imagePreview.alt} className="max-h-[340px] max-w-[244px] rounded-xl object-contain"/></div>}
+    </div>
+  </main>
 }
