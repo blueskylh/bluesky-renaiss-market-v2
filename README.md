@@ -34,14 +34,14 @@
 | 能力 | 说明 |
 | --- | --- |
 | **真实挂牌价** | 从 Renaiss Marketplace 获取当前 listed 卡牌与 `askPriceInUSDT` |
-| **Index 估值** | 优先通过证书号查询 `/v1/graded/{cert}`，失败时再进行受约束的名称搜索 |
-| **套利计算** | 同时展示 Index 价格、美元价差和 ROI |
-| **数据质量保护** | fallback 匹配强制校验评级公司、等级和卡号，避免 PSA / CGC 错配 |
+| **Index 估值** | 只通过证书号查询 `/v1/graded/{cert}`；没有证书号或 Index 没有价格时保持无价格 |
+| **套利计算** | 同时展示 Index 美元参考价、价差和 ROI |
+| **数据质量保护** | 证书结果校验评级公司、等级、卡号和语言，避免跨卡牌错配 |
 | **稳定同步** | 分页、限速、超时、429 / 5xx 重试、单卡失败隔离 |
 | **每日更新** | 由运行平台 Cron 每天 UTC 03:00 自动同步 |
 | **安全设计** | API Key / Secret 只存在后端；手动同步接口默认关闭 |
 
-> 当前版本以 Pokémon 卡牌为主要范围，Index fallback 搜索默认使用 `game=pokemon`。
+> 当前版本以 Pokémon 卡牌为主要范围。Index 只接受证书号查询结果，不再使用名称搜索 fallback。
 
 ## 📐 价格与套利定义
 
@@ -55,16 +55,17 @@
 | ROI | `价差 / Renaiss 挂牌价 × 100%` |
 | 套利候选 | 同时存在有效挂牌价和 Index 价格，且价差为正 |
 
-### Index 匹配优先级
+### Index 匹配规则
 
 ```text
-证书号精确查询
-       ↓ 失败或无价格
-卡号 + 名称 + 语言搜索
+读取 Renaiss 证书号
        ↓
-评级公司与等级一致性校验
+/v1/graded/{cert}
        ↓
-写入 renaissos_prices
+校验评级公司、等级、卡号与语言
+       ↓
+有 priceUsdCents → 写入 renaissos_prices
+无 priceUsdCents → 保持无 Index 价格
 ```
 
 不同评级不会互相替代：
@@ -90,8 +91,8 @@ flowchart LR
 
 1. Marketplace 分页拉取当前挂牌卡牌。
 2. 从卡牌名称或图片 URL 中识别评级公司与证书号。
-3. 优先请求 Renaiss Index 的证书接口。
-4. 证书接口无可用价格时，使用受约束的 `/v1/search` fallback。
+3. 只请求 Renaiss Index 的证书接口。
+4. 证书接口没有价格时保留无价格状态，不用名称搜索猜测其他卡牌。
 5. 计算价差与 ROI，并写入 Surf PostgreSQL。
 6. 前端通过项目 API 读取聚合结果，不接触 Index Secret。
 
@@ -108,7 +109,8 @@ Dashboard 当前展示：
 
 - 已挂牌卡牌数量
 - 挂牌总价值
-- 可套利总价值：全市场当前挂牌卡牌的正价差之和（不受分页或筛选影响，未扣手续费，非保证收益）
+- 已有 Index 价格的卡牌数量
+- 可套利总价值：全市场当前挂牌卡牌的正价差之和
 - Renaiss 挂牌价
 - Index 美元参考价（不显示美分原始值）
 - 价差与 ROI 独立可排序列（点击切换升序 / 降序，默认 ROI 降序）

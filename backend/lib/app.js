@@ -185,56 +185,33 @@ function gradeNumber(value) {
   return match ? Number(match[1]) : null
 }
 
-function chooseSearch(results, card) {
-  let best = null
-  for (const item of Array.isArray(results) ? results : []) {
-    let score = 0
-    if (card.cardNumber && normal(item.cardNumber) === normal(card.cardNumber)) score += 100
-    if (card.pokemonName && normal(item.name).includes(normal(card.pokemonName))) score += 45
-    if (card.language && normal(item.language) === normal(card.language)) score += 20
 
-    // A fallback search must not turn a PSA/CGC/BGS card into another grade.
-    // The live data exposed this failure mode for a CGC 8.5 card matching a PSA 10 result.
-    if (card.gradingCompany) {
-      if (normal(item.company) !== normal(card.gradingCompany)) continue
-      score += 25
-    }
-    if (card.grade) {
-      const itemGrade = gradeNumber(item.grade)
-      if (itemGrade == null || itemGrade !== Number(card.grade)) continue
-      score += 25
-    }
-
-    if (item.priceUsdCents != null) score += 5
-    if (!best || score > best.score) best = { item, score }
-  }
-  return best && best.score >= 100 ? best.item : null
+function cardNumberKey(value) {
+  const raw = String(value || '').trim()
+  if (/^\d+$/.test(raw)) return String(Number(raw))
+  return normal(raw)
 }
 
 function identityMatches(item, card) {
   if (!item) return false
-  if (card.cardNumber && normal(item.cardNumber) !== normal(card.cardNumber)) return false
+  if (card.cardNumber && cardNumberKey(item.cardNumber) !== cardNumberKey(card.cardNumber)) return false
+  if (card.language && item.language && normal(item.language) !== normal(card.language)) return false
   if (card.gradingCompany && normal(item.company) !== normal(card.gradingCompany)) return false
   if (card.grade && gradeNumber(item.grade) !== Number(card.grade)) return false
   return true
 }
 
 async function lookupIndex(card) {
-  if (card.serial) {
-    const payload = await getJson(`${INDEX_API_BASE}/v1/graded/${encodeURIComponent(card.serial)}`, 'index', indexHeaders())
-    const item = payload?.item || payload?.card || null
-    const result = identityMatches(item, card)
-      ? normalizeIndex(payload, 'cert')
-      : { status:'not_found', matchMethod:'cert', errorMessage:'Index identity did not match the Renaiss card', rawJson:JSON.stringify(payload) }
-    if (result.status === 'matched') return result
+  if (!card.serial) return { status:'not_found', matchMethod:'none', errorMessage:'No certificate number' }
+
+  // Certificate lookup is intentionally the only Index lookup path. A card with
+  // no price remains unmatched; name search must not create a false positive.
+  const payload = await getJson(`${INDEX_API_BASE}/v1/graded/${encodeURIComponent(card.serial)}`, 'index', indexHeaders())
+  const item = payload?.item || payload?.card || null
+  if (!identityMatches(item, card)) {
+    return { status:'not_found', matchMethod:'cert', errorMessage:'Index certificate identity did not match the Renaiss card', rawJson:JSON.stringify(payload) }
   }
-  const query = [card.pokemonName, card.cardNumber && `#${card.cardNumber}`, card.setName].filter(Boolean).join(' ').slice(0, 80)
-  if (!query) return { status: 'not_found', matchMethod: 'none', errorMessage: 'No card identity' }
-  const search = await getJson(`${INDEX_API_BASE}/v1/search?q=${encodeURIComponent(query)}&game=pokemon&limit=12`, 'index', indexHeaders())
-  const match = chooseSearch(search.results, card)
-  return match ? normalizeIndex(match, card.serial ? 'cert_then_search' : 'search') : {
-    status: 'not_found', matchMethod: card.serial ? 'cert_then_search' : 'search', errorMessage: 'No confident match', rawJson: JSON.stringify(search),
-  }
+  return normalizeIndex(payload, 'cert')
 }
 
 const COLS = `c.token_id,c.name,c.set_name,c.card_number,c.pokemon_name,c.owner_address,c.ask_price_usdt,c.fmv_price_usd,c.front_image_url,c.grade,c.grading_company,c.year,c.language,c.serial,c.renaiss_url,c.status,c.source_updated_at,c.created_at,c.updated_at`
@@ -372,4 +349,4 @@ async function runDailySync() {
   }
 }
 
-module.exports = { getCollectibles, getStats, getLastSync, getOne, runDailySync, getSyncState: () => activeRun, chooseSearch, identityMatches }
+module.exports = { getCollectibles, getStats, getLastSync, getOne, runDailySync, getSyncState: () => activeRun, identityMatches }
