@@ -37,7 +37,11 @@ type Copy = {
   listedCards:string
   listedValue:string
   indexPrices:string
+  indexCoverage:string
   arbitrageValue:string
+  sortLabel:string
+  clearFilters:string
+  close:string
   searchPlaceholder:string
   allConfidence:string
   onlyOpportunities:string
@@ -69,19 +73,19 @@ type Copy = {
 
 const copy:Record<Language,Copy> = {
   'zh-CN': {
-    title:'跨市场套利监控 v2', register:'立即注册 Renaiss', follow:'关注', github:'我的 GitHub', serialTool:'Renaiss 在售连号工具', refresh:'刷新数据', listedCards:'已挂牌卡牌', listedValue:'挂牌总价值', indexPrices:'已有 Index 价格', arbitrageValue:'可套利总价值', searchPlaceholder:'搜索名称、Token ID 或 Serial', allConfidence:'所有置信度', onlyOpportunities:'只看可套利卡牌', sectionTitle:'可套利卡牌', spreadFormula:'价差 = Renaiss Index 参考价 − Renaiss 当前挂牌价', lastSync:'最后同步', card:'卡牌', askPrice:'Renaiss 挂牌', indexPrice:'Index 参考价 (USD)', spread:'价差', roi:'ROI', sortAscending:'升序', sortDescending:'降序', confidence:'confidence', updated:'更新时间', links:'链接', loading:'加载中…', empty:'没有符合条件的卡牌。', page:'第 {page} 页', previous:'上一页', next:'下一页', unknownSerial:'未识别证书', renaissLink:'Renaiss', indexLink:'Index', cron:'每日 UTC 03:00 自动同步，部署平台 Cron 负责触发。', language:'语言', marketLoadError:'市场数据加载失败',
+    title:'跨市场套利监控 v2', register:'立即注册 Renaiss', follow:'关注', github:'我的 GitHub', serialTool:'Renaiss 在售连号工具', refresh:'刷新数据', listedCards:'已挂牌卡牌', listedValue:'挂牌总价值', indexPrices:'已有 Index 价格', indexCoverage:'覆盖率', arbitrageValue:'理论套利空间', sortLabel:'排序', clearFilters:'清除筛选', close:'关闭', searchPlaceholder:'搜索名称、Token ID 或 Serial', allConfidence:'所有置信度', onlyOpportunities:'只看可套利卡牌', sectionTitle:'可套利卡牌', spreadFormula:'价差 = Renaiss Index 参考价 − Renaiss 当前挂牌价', lastSync:'最后同步', card:'卡牌', askPrice:'Renaiss 挂牌', indexPrice:'Index 参考价 (USD)', spread:'价差', roi:'ROI', sortAscending:'升序', sortDescending:'降序', confidence:'confidence', updated:'更新时间', links:'链接', loading:'加载中…', empty:'没有符合条件的卡牌。', page:'第 {page} 页', previous:'上一页', next:'下一页', unknownSerial:'未识别证书', renaissLink:'Renaiss', indexLink:'Index', cron:'每日 UTC 03:00 自动同步，部署平台 Cron 负责触发。', language:'语言', marketLoadError:'市场数据加载失败',
   },
   'zh-TW': {
-    title:'跨市場套利監控 v2', register:'立即註冊 Renaiss', follow:'關注', github:'我的 GitHub', serialTool:'Renaiss 在售連號工具', refresh:'重新整理', listedCards:'已掛牌卡牌', listedValue:'掛牌總價值', indexPrices:'已有 Index 價格', arbitrageValue:'可套利總價值', searchPlaceholder:'搜尋名稱、Token ID 或 Serial', allConfidence:'所有信心等級', onlyOpportunities:'只看可套利卡牌', sectionTitle:'可套利卡牌', spreadFormula:'價差 = Renaiss Index 參考價 − Renaiss 當前掛牌價', lastSync:'最後同步', card:'卡牌', askPrice:'Renaiss 掛牌', indexPrice:'Index 參考價 (USD)', spread:'價差', roi:'ROI', sortAscending:'升冪', sortDescending:'降冪', confidence:'confidence', updated:'更新時間', links:'連結', loading:'載入中…', empty:'沒有符合條件的卡牌。', page:'第 {page} 頁', previous:'上一頁', next:'下一頁', unknownSerial:'未識別證書', renaissLink:'Renaiss', indexLink:'Index', cron:'每日 UTC 03:00 自動同步，由部署平台 Cron 觸發。', language:'語言', marketLoadError:'市場資料載入失敗',
+    title:'跨市場套利監控 v2', register:'立即註冊 Renaiss', follow:'關注', github:'我的 GitHub', serialTool:'Renaiss 在售連號工具', refresh:'重新整理', listedCards:'已掛牌卡牌', listedValue:'掛牌總價值', indexPrices:'已有 Index 價格', indexCoverage:'覆蓋率', arbitrageValue:'理論套利空間', sortLabel:'排序', clearFilters:'清除篩選', close:'關閉', searchPlaceholder:'搜尋名稱、Token ID 或 Serial', allConfidence:'所有信心等級', onlyOpportunities:'只看可套利卡牌', sectionTitle:'可套利卡牌', spreadFormula:'價差 = Renaiss Index 參考價 − Renaiss 當前掛牌價', lastSync:'最後同步', card:'卡牌', askPrice:'Renaiss 掛牌', indexPrice:'Index 參考價 (USD)', spread:'價差', roi:'ROI', sortAscending:'升冪', sortDescending:'降冪', confidence:'confidence', updated:'更新時間', links:'連結', loading:'載入中…', empty:'沒有符合條件的卡牌。', page:'第 {page} 頁', previous:'上一頁', next:'下一頁', unknownSerial:'未識別證書', renaissLink:'Renaiss', indexLink:'Index', cron:'每日 UTC 03:00 自動同步，由部署平台 Cron 觸發。', language:'語言', marketLoadError:'市場資料載入失敗',
   },
   en: {
-    title:'Cross-Market Arbitrage Monitor v2', register:'Register on Renaiss', follow:'Follow', github:'My GitHub', serialTool:'Renaiss Serial Tool', refresh:'Refresh', listedCards:'Listed Cards', listedValue:'Listed Value', indexPrices:'Index Prices Available', arbitrageValue:'Total Arbitrage Value', searchPlaceholder:'Search name, Token ID, or Serial', allConfidence:'All confidence', onlyOpportunities:'Only arbitrage cards', sectionTitle:'Arbitrage Cards', spreadFormula:'Spread = Renaiss Index reference price − Renaiss current ask', lastSync:'Last sync', card:'Card', askPrice:'Renaiss Ask', indexPrice:'Index Price (USD)', spread:'Spread', roi:'ROI', sortAscending:'Ascending', sortDescending:'Descending', confidence:'Confidence', updated:'Updated', links:'Links', loading:'Loading…', empty:'No cards match your filters.', page:'Page {page}', previous:'Previous', next:'Next', unknownSerial:'Unidentified cert', renaissLink:'Renaiss', indexLink:'Index', cron:'Automatic sync daily at 03:00 UTC, triggered by the deployment Cron.', language:'Language', marketLoadError:'Failed to load market data',
+    title:'Cross-Market Arbitrage Monitor v2', register:'Register on Renaiss', follow:'Follow', github:'My GitHub', serialTool:'Renaiss Serial Tool', refresh:'Refresh', listedCards:'Listed Cards', listedValue:'Listed Value', indexPrices:'Index Prices Available', indexCoverage:'Coverage', arbitrageValue:'Theoretical Arbitrage Space', sortLabel:'Sort', clearFilters:'Clear filters', close:'Close', searchPlaceholder:'Search name, Token ID, or Serial', allConfidence:'All confidence', onlyOpportunities:'Only arbitrage cards', sectionTitle:'Arbitrage Cards', spreadFormula:'Spread = Renaiss Index reference price − Renaiss current ask', lastSync:'Last sync', card:'Card', askPrice:'Renaiss Ask', indexPrice:'Index Price (USD)', spread:'Spread', roi:'ROI', sortAscending:'Ascending', sortDescending:'Descending', confidence:'Confidence', updated:'Updated', links:'Links', loading:'Loading…', empty:'No cards match your filters.', page:'Page {page}', previous:'Previous', next:'Next', unknownSerial:'Unidentified cert', renaissLink:'Renaiss', indexLink:'Index', cron:'Automatic sync daily at 03:00 UTC, triggered by the deployment Cron.', language:'Language', marketLoadError:'Failed to load market data',
   },
   ja: {
-    title:'クロスマーケット裁定監視 v2', register:'Renaiss に登録', follow:'フォロー', github:'GitHub', serialTool:'Renaiss 連番ツール', refresh:'更新', listedCards:'出品カード', listedValue:'出品総額', indexPrices:'Index 価格あり', arbitrageValue:'裁定機会の総額', searchPlaceholder:'名前、Token ID、Serial を検索', allConfidence:'信頼度すべて', onlyOpportunities:'裁定可能なカードのみ', sectionTitle:'裁定可能なカード', spreadFormula:'価格差 = Renaiss Index 参考価格 − Renaiss 現在の出品価格', lastSync:'最終同期', card:'カード', askPrice:'Renaiss 出品価格', indexPrice:'Index 参考価格 (USD)', spread:'価格差', roi:'ROI', sortAscending:'昇順', sortDescending:'降順', confidence:'信頼度', updated:'更新日時', links:'リンク', loading:'読み込み中…', empty:'条件に一致するカードはありません。', page:'{page} ページ', previous:'前へ', next:'次へ', unknownSerial:'証明書番号なし', renaissLink:'Renaiss', indexLink:'Index', cron:'毎日 03:00 UTC に自動同期。デプロイ環境の Cron が実行します。', language:'言語', marketLoadError:'マーケットデータの読み込みに失敗しました',
+    title:'クロスマーケット裁定監視 v2', register:'Renaiss に登録', follow:'フォロー', github:'GitHub', serialTool:'Renaiss 連番ツール', refresh:'更新', listedCards:'出品カード', listedValue:'出品総額', indexPrices:'Index 価格あり', indexCoverage:'カバレッジ', arbitrageValue:'理論裁定余地', sortLabel:'並べ替え', clearFilters:'フィルターを解除', close:'閉じる', searchPlaceholder:'名前、Token ID、Serial を検索', allConfidence:'信頼度すべて', onlyOpportunities:'裁定可能なカードのみ', sectionTitle:'裁定可能なカード', spreadFormula:'価格差 = Renaiss Index 参考価格 − Renaiss 現在の出品価格', lastSync:'最終同期', card:'カード', askPrice:'Renaiss 出品価格', indexPrice:'Index 参考価格 (USD)', spread:'価格差', roi:'ROI', sortAscending:'昇順', sortDescending:'降順', confidence:'信頼度', updated:'更新日時', links:'リンク', loading:'読み込み中…', empty:'条件に一致するカードはありません。', page:'{page} ページ', previous:'前へ', next:'次へ', unknownSerial:'証明書番号なし', renaissLink:'Renaiss', indexLink:'Index', cron:'毎日 03:00 UTC に自動同期。デプロイ環境の Cron が実行します。', language:'言語', marketLoadError:'マーケットデータの読み込みに失敗しました',
   },
   ko: {
-    title:'크로스 마켓 차익거래 모니터 v2', register:'Renaiss 가입', follow:'팔로우', github:'내 GitHub', serialTool:'Renaiss 연번 도구', refresh:'새로고침', listedCards:'상장 카드', listedValue:'상장 총액', indexPrices:'Index 가격 있음', arbitrageValue:'총 차익거래 가치', searchPlaceholder:'이름, Token ID 또는 Serial 검색', allConfidence:'모든 신뢰도', onlyOpportunities:'차익거래 가능 카드만', sectionTitle:'차익거래 가능 카드', spreadFormula:'스프레드 = Renaiss Index 기준가 − Renaiss 현재 판매가', lastSync:'마지막 동기화', card:'카드', askPrice:'Renaiss 판매가', indexPrice:'Index 기준가 (USD)', spread:'스프레드', roi:'ROI', sortAscending:'오름차순', sortDescending:'내림차순', confidence:'신뢰도', updated:'업데이트', links:'링크', loading:'불러오는 중…', empty:'조건에 맞는 카드가 없습니다.', page:'{page}페이지', previous:'이전', next:'다음', unknownSerial:'인증서 번호 없음', renaissLink:'Renaiss', indexLink:'Index', cron:'매일 03:00 UTC 자동 동기화. 배포 플랫폼 Cron이 실행합니다.', language:'언어', marketLoadError:'시장 데이터를 불러오지 못했습니다',
+    title:'크로스 마켓 차익거래 모니터 v2', register:'Renaiss 가입', follow:'팔로우', github:'내 GitHub', serialTool:'Renaiss 연번 도구', refresh:'새로고침', listedCards:'상장 카드', listedValue:'상장 총액', indexPrices:'Index 가격 있음', indexCoverage:'커버리지', arbitrageValue:'이론 차익거래 공간', sortLabel:'정렬', clearFilters:'필터 지우기', close:'닫기', searchPlaceholder:'이름, Token ID 또는 Serial 검색', allConfidence:'모든 신뢰도', onlyOpportunities:'차익거래 가능 카드만', sectionTitle:'차익거래 가능 카드', spreadFormula:'스프레드 = Renaiss Index 기준가 − Renaiss 현재 판매가', lastSync:'마지막 동기화', card:'카드', askPrice:'Renaiss 판매가', indexPrice:'Index 기준가 (USD)', spread:'스프레드', roi:'ROI', sortAscending:'오름차순', sortDescending:'내림차순', confidence:'신뢰도', updated:'업데이트', links:'링크', loading:'불러오는 중…', empty:'조건에 맞는 카드가 없습니다.', page:'{page}페이지', previous:'이전', next:'다음', unknownSerial:'인증서 번호 없음', renaissLink:'Renaiss', indexLink:'Index', cron:'매일 03:00 UTC 자동 동기화. 배포 플랫폼 Cron이 실행합니다.', language:'언어', marketLoadError:'시장 데이터를 불러오지 못했습니다',
   },
 }
 
@@ -127,7 +131,7 @@ export default function App() {
   const [onlyOpp,setOnlyOpp] = useState(true)
   const [page,setPage] = useState(0)
   const [sort,setSort] = useState<{key:SortKey;order:SortOrder}>({key:'roiPct',order:'desc'})
-  const [imagePreview,setImagePreview] = useState<{src:string;alt:string;left:number;top:number}|null>(null)
+  const [imageModal,setImageModal] = useState<{src:string;alt:string}|null>(null)
   const requestController = useRef<AbortController|null>(null)
   const limit = 20
   const t = copy[language]
@@ -170,14 +174,19 @@ export default function App() {
     return ()=>requestController.current?.abort()
   },[load])
 
-  const updateImagePreview = (event:{clientX:number;clientY:number}, src:string, alt:string) => {
-    if(typeof window === 'undefined') return
-    const width = 260
-    const height = 360
-    const gap = 20
-    const left = Math.min(event.clientX + gap, Math.max(gap, window.innerWidth - width - gap))
-    const top = Math.min(event.clientY + gap, Math.max(gap, window.innerHeight - height - gap))
-    setImagePreview({src,alt,left,top})
+  useEffect(() => {
+    if(!imageModal) return
+    const onKeyDown = (event:KeyboardEvent) => { if(event.key === 'Escape') setImageModal(null) }
+    window.addEventListener('keydown',onKeyDown)
+    return () => window.removeEventListener('keydown',onKeyDown)
+  },[imageModal])
+
+  const clearFilters = () => {
+    setSearch('')
+    setConfidence('')
+    setOnlyOpp(true)
+    setPage(0)
+    setSort({key:'roiPct',order:'desc'})
   }
 
   const setSortValue = (value:string) => {
@@ -205,7 +214,6 @@ export default function App() {
               <h1 className="text-3xl font-black tracking-tight md:text-4xl">{t.title}</h1>
               <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-400">
                 <span className="rounded-full border border-slate-700/80 bg-slate-950/40 px-3 py-1.5">{t.lastSync}：{time(lastSync?.finished_at,language)}</span>
-                <span className="rounded-full border border-slate-700/80 bg-slate-950/40 px-3 py-1.5">{t.cron}</span>
               </div>
             </div>
           </div>
@@ -216,22 +224,21 @@ export default function App() {
             <a href="https://x.com/blueskylh1" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-sky-400/35 bg-sky-400/10 px-3.5 py-2.5 text-sm font-semibold text-sky-100 transition hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-400/20"><img src={blueskylhAvatar} alt="blueskylh1 avatar" className="h-6 w-6 rounded-full object-cover ring-1 ring-sky-300/50"/><span><span className="block text-[10px] uppercase tracking-wider text-sky-300">{t.follow}</span><span className="block leading-none">@blueskylh1 ↗</span></span></a>
             <a href="https://github.com/blueskylh/bluesky-renaiss-market-v2" target="_blank" rel="noreferrer" className="rounded-xl border border-slate-700 bg-slate-950/30 px-4 py-2.5 text-sm text-slate-300 transition hover:-translate-y-0.5 hover:border-slate-400">{t.github} ↗</a>
             <a href="https://renaiss-tool-689931.napa.de5.net/" target="_blank" rel="noreferrer" className="rounded-xl border border-emerald-400/35 bg-emerald-400/10 px-4 py-2.5 text-sm font-semibold text-emerald-100 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-400/20">{t.serialTool} ↗</a>
-            <button onClick={()=>void load()} className="rounded-xl border border-slate-700 bg-slate-950/30 px-4 py-2.5 text-sm font-bold text-slate-200 transition hover:-translate-y-0.5 hover:border-pink-400 hover:text-white">{t.refresh}</button>
           </div>
         </div>
       </header>
 
       <section className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {statsItems.map(([label,value])=><div key={String(label)} className="rounded-2xl border border-slate-800 bg-slate-900/75 p-5 shadow-lg shadow-black/10"><div className="text-xs uppercase tracking-widest text-slate-500">{label}</div><div className="mt-2 text-2xl font-black">{typeof value==='number'?value.toLocaleString(locales[language]):value}</div></div>)}
+        {statsItems.map(([label,value])=><div key={String(label)} className="rounded-2xl border border-slate-800 bg-slate-900/75 p-5 shadow-lg shadow-black/10"><div className="text-xs uppercase tracking-widest text-slate-500">{label}</div><div className="mt-2 text-2xl font-black">{typeof value==='number'?value.toLocaleString(locales[language]):value}</div>{label===t.indexPrices&&<div className="mt-2 text-xs text-slate-500">{t.indexCoverage}：{stats?.withAskPrice?`${((stats.withIndexPrice/stats.withAskPrice)*100).toFixed(1)}%`:'—'}</div>}</div>)}
       </section>
 
       <section className="mb-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg shadow-black/10">
         <div className="flex flex-col gap-3 xl:flex-row">
           <input value={search} onChange={e=>{setPage(0);setSearch(e.target.value)}} placeholder={t.searchPlaceholder} className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm outline-none transition focus:border-pink-400"/>
           <select value={confidence} aria-label={t.allConfidence} onChange={e=>{setPage(0);setConfidence(e.target.value)}} className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-3 text-sm"><option value="">{t.allConfidence}</option>{(['prime','high','medium','low'] as Confidence[]).map(item=><option key={item} value={item}>{confidenceLabels[language][item]}</option>)}</select>
-          <select value={`${sort.key}:${sort.order}`} aria-label={t.roi} onChange={e=>setSortValue(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-3 text-sm"><option value="roiPct:desc">{t.roi} ↓</option><option value="roiPct:asc">{t.roi} ↑</option><option value="spreadUsd:desc">{t.spread} ↓</option><option value="spreadUsd:asc">{t.spread} ↑</option></select>
+          <label className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2.5 text-sm text-slate-400"><span>{t.sortLabel}</span><select value={`${sort.key}:${sort.order}`} aria-label={t.sortLabel} onChange={e=>setSortValue(e.target.value)} className="bg-transparent text-slate-200 outline-none"><option value="roiPct:desc">{t.roi} ↓</option><option value="roiPct:asc">{t.roi} ↑</option><option value="spreadUsd:desc">{t.spread} ↓</option><option value="spreadUsd:asc">{t.spread} ↑</option></select></label>
           <label className="flex items-center gap-2 rounded-xl border border-transparent px-1 text-sm whitespace-nowrap"><input type="checkbox" checked={onlyOpp} onChange={e=>{setPage(0);setOnlyOpp(e.target.checked)}} className="h-4 w-4 accent-pink-500"/>{t.onlyOpportunities}</label>
-          <button onClick={()=>void load()} className="rounded-xl border border-slate-700 px-4 py-3 text-sm transition hover:border-pink-400">{t.refresh}</button>
+          <button onClick={clearFilters} className="rounded-xl border border-slate-700 px-4 py-3 text-sm transition hover:border-slate-400">{t.clearFilters}</button><button onClick={()=>void load()} className="rounded-xl border border-slate-700 px-4 py-3 text-sm transition hover:border-pink-400">{t.refresh}</button>
         </div>
         {error&&<div className="mt-3 rounded-xl bg-red-950/50 px-4 py-3 text-sm text-red-300">{error}</div>}
       </section>
@@ -246,7 +253,7 @@ export default function App() {
           return <article key={card.token_id} className="group/card rounded-3xl border border-slate-800 bg-[linear-gradient(135deg,rgba(19,24,40,.98),rgba(14,17,27,.98))] p-5 shadow-xl shadow-black/15 transition duration-200 hover:-translate-y-0.5 hover:border-fuchsia-400/35 hover:shadow-fuchsia-950/20">
             <div className="mb-5 flex items-start justify-between gap-3"><div className="flex items-center gap-2"><span className="text-xs font-mono text-slate-600">#{page*limit+index+1}</span><span className="text-lg text-fuchsia-400">ϟ</span><span className="rounded-full border border-fuchsia-400/30 bg-fuchsia-400/10 px-2.5 py-1 text-xs font-bold text-fuchsia-200">{t.sectionTitle}</span></div><div className="flex flex-wrap justify-end gap-2"><span className={`rounded-full px-3 py-1 text-xs font-black ${positive?'bg-emerald-400/15 text-emerald-300':'bg-red-400/15 text-red-300'}`}>{t.spread} {money(card.spreadUsd,language)}</span><span className={`rounded-full px-3 py-1 text-xs font-black ${positive?'bg-fuchsia-400/15 text-fuchsia-200':'bg-red-400/15 text-red-300'}`}>{t.roi} {percent(card.roiPct)}</span></div></div>
             <div className="flex flex-col gap-5 sm:flex-row">
-              <div className="flex shrink-0 justify-center sm:w-36 sm:items-start"><div className="relative flex h-56 w-36 items-center justify-center overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-950/70 p-2 shadow-inner shadow-black/50" onMouseLeave={()=>setImagePreview(null)}>{card.front_image_url?<img src={card.front_image_url} alt={card.name} onMouseEnter={event=>updateImagePreview(event,card.front_image_url!,card.name)} onMouseMove={event=>updateImagePreview(event,card.front_image_url!,card.name)} className="h-full w-full cursor-zoom-in rounded-xl object-contain transition-transform duration-200 group-hover/card:scale-[1.02]"/>:<div className="h-full w-full rounded-xl bg-slate-800"/>}<span className="pointer-events-none absolute bottom-2 left-2 rounded-full bg-slate-950/80 px-2 py-1 text-[10px] text-slate-400">⌕</span></div></div>
+              <div className="flex shrink-0 justify-center sm:w-44 sm:items-start"><div className="relative flex h-64 w-44 items-center justify-center overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-950/70 p-2 shadow-inner shadow-black/50">{card.front_image_url?<button type="button" onClick={()=>setImageModal({src:card.front_image_url!,alt:card.name})} className="group/image h-full w-full cursor-zoom-in rounded-xl focus-visible:outline-2 focus-visible:outline-pink-400"><img src={card.front_image_url} alt={card.name} className="h-full w-full rounded-xl object-contain transition-transform duration-200 group-hover/image:scale-[1.04]"/></button>:<div className="h-full w-full rounded-xl bg-slate-800"/>}<span className="pointer-events-none absolute bottom-2 left-2 rounded-full bg-slate-950/80 px-2 py-1 text-[10px] text-slate-400">⌕</span></div></div>
               <div className="min-w-0 flex-1"><h3 className="text-lg font-bold leading-snug text-slate-100" title={card.name}>{card.name}</h3><p className="mt-2 text-sm text-slate-400">{card.set_name||'—'} · #{card.card_number||'—'}</p><p className="mt-1 truncate text-xs font-mono text-slate-500">{card.serial||t.unknownSerial}</p><div className="mt-3 flex flex-wrap gap-2">{card.confidence&&<span className={`rounded-full px-2.5 py-1 text-xs font-bold ${badge[card.confidence]||'bg-slate-800 text-slate-300'}`}>{confidenceLabels[language][card.confidence]}</span>}<span className="rounded-full border border-slate-700 px-2.5 py-1 text-xs text-slate-400">{card.language||'—'}</span></div><div className="mt-5 grid grid-cols-2 gap-3"><div className="rounded-2xl border border-slate-800 bg-slate-950/45 p-3"><div className="text-xs text-slate-500">{t.askPrice}</div><div className="mt-1 font-mono text-lg font-bold text-slate-100">{money(card.ask_price_usdt,language)}</div></div><div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-3"><div className="text-xs text-slate-500">{t.indexPrice}</div><div className="mt-1 font-mono text-lg font-bold text-emerald-300">{money(card.indexPriceUsd,language)}</div></div></div><div className="mt-4 flex flex-wrap gap-2"><div className="rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-400">{t.updated}：{time(card.last_sale_at||card.observed_at,language)}</div></div><div className="mt-5 flex flex-wrap gap-2"><a href={card.renaissUrl||'#'} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold transition hover:border-pink-400">{t.renaissLink} ↗</a>{card.indexUrl&&<a href={card.indexUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold transition hover:border-cyan-400">{t.indexLink} ↗</a>}</div></div>
             </div>
           </article>
@@ -255,7 +262,7 @@ export default function App() {
       </section>
 
       <footer className="mt-7 flex justify-between text-xs text-slate-600"><span>{t.cron}</span></footer>
-      {imagePreview&&<div className="pointer-events-none fixed z-[100] hidden rounded-2xl border border-pink-400/60 bg-slate-950/95 p-2 shadow-2xl shadow-pink-500/20 md:block" style={{left:imagePreview.left,top:imagePreview.top}}><img src={imagePreview.src} alt={imagePreview.alt} className="max-h-[340px] max-w-[244px] rounded-xl object-contain"/></div>}
+      {imageModal&&<div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={imageModal.alt} onClick={()=>setImageModal(null)}><div className="relative max-h-[92vh] max-w-[92vw] rounded-3xl border border-pink-400/40 bg-slate-950/95 p-3 shadow-2xl shadow-fuchsia-950/40" onClick={event=>event.stopPropagation()}><button type="button" onClick={()=>setImageModal(null)} aria-label={t.close} className="absolute -right-3 -top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-slate-600 bg-slate-900 text-xl text-slate-200 shadow-lg transition hover:border-pink-400 hover:text-white">×</button><img src={imageModal.src} alt={imageModal.alt} className="max-h-[82vh] max-w-[86vw] rounded-2xl object-contain"/><div className="mt-3 max-w-[86vw] truncate px-1 text-center text-sm text-slate-300">{imageModal.alt}</div></div></div>}
     </div>
   </main>
 }
