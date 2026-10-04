@@ -15,6 +15,16 @@
   实时读取 Renaiss 当前挂牌价，结合 Renaiss Index 的 <code>priceUsdCents</code> 与 <code>confidence</code>，筛选潜在套利机会。
 </p>
 
+<p>
+  <a href="https://www.renaiss.xyz/ref/blueskyone"><strong>👉 立即注册 Renaiss（邀请链接）</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://x.com/blueskylh1"><strong>Follow @blueskylh1</strong></a>
+</p>
+
+<p>
+  <strong>Demo：</strong>部署完成后更新链接
+</p>
+
 </div>
 
 ---
@@ -87,6 +97,13 @@ flowchart LR
 
 ## 🖥️ 页面展示
 
+### UI Preview
+
+![Renaiss Market v2 UI Preview](./docs/assets/renaiss-market-preview.png)
+
+> 当前图片为实际运行验收截图，展示挂牌价、Index 价格、价差、ROI、confidence 与外部链接。
+> Demo 在线地址会在完成部署后补充。
+
 Dashboard 当前展示：
 
 - 已挂牌卡牌数量
@@ -126,6 +143,7 @@ Dashboard 当前展示：
 ├── cron/
 │   └── daily-sync.js             # 每日同步任务
 ├── cron.json                     # Cron 调度配置
+├── docs/assets/renaiss-market-preview.png # UI 预览图
 └── README.md
 ```
 
