@@ -119,10 +119,14 @@ Dashboard 当前展示：
 
 支持：
 
+- 简体中文、繁體中文、English、日本語、한국어
 - 名称、Token ID、Serial 搜索
 - `prime / high / medium / low` 置信度筛选
 - 只查看正价差套利候选
 - 分页浏览
+- 一键注册 Renaiss
+- 一键关注 `@blueskylh1`
+- 访问项目 GitHub 仓库
 
 ## 🗂️ 项目结构
 
