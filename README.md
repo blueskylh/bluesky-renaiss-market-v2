@@ -35,7 +35,7 @@
 | --- | --- |
 | **真实挂牌价** | 从 Renaiss Marketplace 获取当前 listed 卡牌与 `askPriceInUSDT` |
 | **Index 估值** | 只通过证书号查询 `/v1/graded/{cert}`；没有证书号或 Index 没有价格时保持无价格 |
-| **套利计算** | 同时展示 Index 美元参考价、价差和 ROI |
+| **套利计算** | 同时展示 Index 美元参考价和价差，并将价差作为主要筛选依据 |
 | **数据质量保护** | 证书结果校验评级公司、等级、卡号和语言，避免跨卡牌错配 |
 | **稳定同步** | 分页、限速、超时、429 / 5xx 重试、单卡失败隔离 |
 | **每日更新** | 由运行平台 Cron 每天 UTC 03:00 自动同步 |
@@ -52,7 +52,6 @@
 | Renaiss 挂牌价 | `askPriceInUSDT / 1e18` |
 | Index 参考价 | `priceUsdCents / 100` |
 | 价差 | `Index 参考价 - Renaiss 挂牌价` |
-| ROI | `价差 / Renaiss 挂牌价 × 100%` |
 | 套利候选 | 同时存在有效挂牌价和 Index 价格，且价差为正 |
 
 ### Index 匹配规则
@@ -93,7 +92,7 @@ flowchart LR
 2. 从卡牌名称或图片 URL 中识别评级公司与证书号。
 3. 只请求 Renaiss Index 的证书接口。
 4. 证书接口没有价格时保留无价格状态，不用名称搜索猜测其他卡牌。
-5. 计算价差与 ROI，并写入 Surf PostgreSQL。
+5. 计算价差，并写入 Surf PostgreSQL。
 6. 前端通过项目 API 读取聚合结果，不接触 Index Secret。
 
 ## 🖥️ 页面展示
@@ -119,7 +118,7 @@ Dashboard 当前展示：
 - Index 匹配质量（`confidence`）
 - 首次使用引导：解释价差、卡牌核对和外部链接验证流程
 - 最近成交 / 更新时间
-- Renaiss 链接与 Index 链接
+- `Renaiss商店` 与 `Renaiss Index` 按钮（Renaiss 按钮带透明 Logo）
 
 支持：
 
