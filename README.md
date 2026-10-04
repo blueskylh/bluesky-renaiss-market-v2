@@ -122,7 +122,7 @@ Dashboard 当前展示：
 - 名称、Token ID、Serial 搜索
 - `prime / high / medium / low` 置信度筛选
 - 只查看可套利卡牌
-- 服务端全量排序后分页浏览；无有效价格的卡牌排在末尾
+- 服务端全量排序后分页浏览，每页 20 张卡牌；无有效价格的卡牌排在末尾
 - 一键注册 Renaiss
 - 一键关注 `@blueskylh1`
 - 访问项目 GitHub 仓库

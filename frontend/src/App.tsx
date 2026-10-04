@@ -125,7 +125,7 @@ export default function App() {
   const [page,setPage] = useState(0)
   const [sort,setSort] = useState<{key:SortKey;order:SortOrder}>({key:'roiPct',order:'desc'})
   const requestController = useRef<AbortController|null>(null)
-  const limit = 100
+  const limit = 20
   const t = copy[language]
 
   useEffect(() => { setLanguage(detectLanguage()) }, [])
