@@ -36,11 +36,18 @@ SDK 会自动加载 `backend/routes/*.js` 为 `/api/{name}`：
 - `GET /api/market/collectibles/:tokenId`
 - `GET /api/market/sync-status`
 - `GET /api/sync/status`
-- `POST /api/sync`
+- `POST /api/sync`（需要 `Authorization: Bearer $SYNC_ADMIN_TOKEN`；未配置时关闭）
 
 ## 每日同步
 
-根目录 `cron.json` 配置每日 UTC 03:00 运行 `cron/daily-sync.js`。同步具备分页、请求间隔、429/5xx 退避、同步锁、单卡失败隔离和 `sync_runs` 记录。
+根目录 `cron.json` 配置每日 UTC 03:00 运行 `cron/daily-sync.js`。同步具备分页、请求间隔、429/5xx 退避、同步锁、单卡失败隔离和 `sync_runs` 记录。同步只有在 Marketplace 分页完整结束时才会把本次快照之外的旧卡标记为 `unlisted`，避免接口故障或数量上限导致误下架。
+
+手动同步接口默认关闭；如确实需要临时触发，在服务端设置 `SYNC_ADMIN_TOKEN`，然后使用：
+
+```bash
+curl -X POST https://your-domain/api/sync \\
+  -H "Authorization: Bearer $SYNC_ADMIN_TOKEN"
+```
 
 如果证书号可用，优先调用 `/v1/graded/{cert}`；否则回退到 `/v1/search`，并要求卡号匹配后才写入 Index 价格。
 

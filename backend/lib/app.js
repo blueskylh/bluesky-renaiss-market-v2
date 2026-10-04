@@ -125,17 +125,24 @@ function collectible(raw) {
 
 async function fetchMarketplace() {
   const size = Math.min(Math.max(Number(process.env.RENAISS_PAGE_SIZE || 100), 1), 100)
-  const max = Math.max(Number(process.env.RENAISS_MAX_CARDS || 5000), size)
+  const max = Math.max(Number(process.env.RENAISS_MAX_CARDS || 5000), 1)
   const result = []
+  let complete = false
   for (let offset = 0; result.length < max;) {
     const payload = await getJson(`${RENAISS_BASE}/v0/marketplace?limit=${Math.min(size, max - result.length)}&offset=${offset}&listedOnly=true`, 'renaiss')
     const page = Array.isArray(payload.collection) ? payload.collection : []
-    if (!page.length) break
+    if (!page.length) {
+      complete = true
+      break
+    }
     result.push(...page)
     offset += page.length
-    if (!payload.pagination?.hasMore) break
+    if (!payload.pagination?.hasMore) {
+      complete = true
+      break
+    }
   }
-  return result.slice(0, max).map(collectible)
+  return { cards: result.slice(0, max).map(collectible), complete }
 }
 
 function indexUrl(href) {
@@ -236,14 +243,26 @@ async function upsertPrice(tokenId, data) {
   await dbQuery(`INSERT INTO renaissos_prices(token_id,index_id,price_usd_cents,confidence,index_href,index_url,last_sale_at,index_updated_at,observed_at,status,match_method,error_message,raw_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,NOW(),$9,$10,$11,$12) ON CONFLICT(token_id) DO UPDATE SET index_id=EXCLUDED.index_id,price_usd_cents=EXCLUDED.price_usd_cents,confidence=EXCLUDED.confidence,index_href=EXCLUDED.index_href,index_url=EXCLUDED.index_url,last_sale_at=EXCLUDED.last_sale_at,index_updated_at=EXCLUDED.index_updated_at,observed_at=NOW(),status=EXCLUDED.status,match_method=EXCLUDED.match_method,error_message=EXCLUDED.error_message,raw_json=EXCLUDED.raw_json`, [tokenId,data.indexId||null,data.priceUsdCents==null?null:data.priceUsdCents,data.confidence||null,data.indexHref||null,data.indexUrl||null,data.lastSaleAt||null,data.indexUpdatedAt||null,data.status||'not_found',data.matchMethod||null,data.errorMessage||null,data.rawJson||null])
 }
 
+async function markMissingAsUnlisted(tokenIds) {
+  if (!tokenIds.length) return
+  await dbQuery(
+    `UPDATE collectibles SET status='unlisted', updated_at=NOW()
+     WHERE status='listed' AND NOT (token_id = ANY($1::text[]))`,
+    [tokenIds],
+  )
+}
+
 async function runDailySync() {
   if (activeRun) return { ...activeRun, alreadyRunning: true }
   const id = crypto.randomUUID(), started = new Date().toISOString()
   activeRun = { runId:id,status:'running',startedAt:started,totalCards:0,updatedCards:0,failedCards:0 }
-  await dbQuery('INSERT INTO sync_runs(id,status,started_at) VALUES($1,$2,$3)', [id,'running',started])
   try {
-    const cards = await fetchMarketplace(), errors = []
+    await dbQuery('INSERT INTO sync_runs(id,status,started_at) VALUES($1,$2,$3)', [id,'running',started])
+    const snapshot = await fetchMarketplace()
+    const cards = snapshot.cards
+    const errors = []
     let updated = 0, failed = 0
+
     for (const card of cards) {
       activeRun.totalCards += 1
       try {
@@ -257,16 +276,28 @@ async function runDailySync() {
         if (errors.length < 20) errors.push({ tokenId: card.tokenId, error: message })
         await upsertPrice(card.tokenId, { status:'failed', matchMethod:card.serial?'cert':'search', errorMessage:message }).catch(() => {})
       }
-      activeRun.updatedCards = updated; activeRun.failedCards = failed
+      activeRun.updatedCards = updated
+      activeRun.failedCards = failed
     }
-    const status = failed && !updated ? 'failed' : failed ? 'partial' : 'success', finished = new Date().toISOString()
+
+    // Only mark missing cards when the Marketplace pagination completed normally.
+    // This prevents a transient API failure or the 5000-card cap from hiding data.
+    if (snapshot.complete && cards.length > 0) {
+      await markMissingAsUnlisted(cards.map(card => card.tokenId))
+    }
+
+    const status = failed && !updated ? 'failed' : failed ? 'partial' : 'success'
+    const finished = new Date().toISOString()
     await dbQuery('UPDATE sync_runs SET status=$2,total_cards=$3,updated_cards=$4,failed_cards=$5,finished_at=$6,error_message=$7 WHERE id=$1', [id,status,cards.length,updated,failed,finished,errors.length?JSON.stringify(errors):null])
     return { success:status !== 'failed',runId:id,status,startedAt:started,finishedAt:finished,totalCards:cards.length,updatedCards:updated,failedCards:failed,errors }
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error), finished = new Date().toISOString()
+    const message = error instanceof Error ? error.message : String(error)
+    const finished = new Date().toISOString()
     await dbQuery('UPDATE sync_runs SET status=$2,total_cards=$3,updated_cards=$4,failed_cards=$5,finished_at=$6,error_message=$7 WHERE id=$1', [id,'failed',activeRun.totalCards,activeRun.updatedCards,activeRun.failedCards,finished,message]).catch(() => {})
     return { success:false,runId:id,status:'failed',error:message }
-  } finally { activeRun = null }
+  } finally {
+    activeRun = null
+  }
 }
 
 module.exports = { getCollectibles, getStats, getLastSync, getOne, runDailySync, getSyncState: () => activeRun }
