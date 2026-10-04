@@ -240,14 +240,18 @@ async function lookupIndex(card) {
 const COLS = `c.token_id,c.name,c.set_name,c.card_number,c.pokemon_name,c.owner_address,c.ask_price_usdt,c.fmv_price_usd,c.front_image_url,c.grade,c.grading_company,c.year,c.language,c.serial,c.renaiss_url,c.status,c.source_updated_at,c.created_at,c.updated_at`
 const JOINED = `${COLS},p.index_id,p.price_usd_cents,p.confidence,p.index_href,p.index_url,p.last_sale_at,p.index_updated_at,p.observed_at,p.status AS index_status,p.match_method,p.error_message`
 const JOIN = 'LEFT JOIN renaissos_prices p ON c.token_id=p.token_id'
+// Shared definitions keep the summary, filters and global sorting consistent.
+const SPREAD_SQL = 'CASE WHEN c.ask_price_usdt>0 AND p.price_usd_cents>=0 THEN p.price_usd_cents/100.0-c.ask_price_usdt END'
+const ROI_SQL = `(${SPREAD_SQL})/NULLIF(c.ask_price_usdt,0)*100.0`
+const OPPORTUNITY_SQL = 'c.ask_price_usdt>0 AND p.price_usd_cents IS NOT NULL AND p.price_usd_cents/100.0>c.ask_price_usdt'
 
 function mapRow(row) {
   const indexPrice = row.price_usd_cents == null ? null : Number(row.price_usd_cents) / 100
   const ask = Number(row.ask_price_usdt || 0)
-  const spread = indexPrice == null ? null : indexPrice - ask
+  const spread = indexPrice == null || indexPrice < 0 || ask <= 0 ? null : indexPrice - ask
   return {
     ...row, tokenId: row.token_id, askPriceInUSDT: ask, priceUsdCents: row.price_usd_cents == null ? null : Number(row.price_usd_cents), indexPriceUsd: indexPrice,
-    spreadUsd: spread, roiPct: indexPrice != null && ask > 0 ? spread / ask * 100 : null, discountPct: indexPrice ? spread / indexPrice * 100 : null,
+    spreadUsd: spread, roiPct: spread != null ? spread / ask * 100 : null, discountPct: indexPrice ? spread / indexPrice * 100 : null,
     renaissUrl: row.renaiss_url, indexUrl: row.index_url, indexStatus: row.index_status || null,
   }
 }
@@ -259,19 +263,31 @@ async function getCollectibles(options = {}) {
   if (status !== 'all') { where.push(`c.status=$${i++}`); params.push(status) }
   if (options.search) { where.push(`(c.name ILIKE $${i} OR c.token_id ILIKE $${i} OR c.serial ILIKE $${i})`); params.push(`%${options.search}%`); i += 1 }
   if (options.confidence) { where.push(`p.confidence=$${i++}`); params.push(options.confidence) }
-  if (options.onlyOpportunities) where.push('p.price_usd_cents IS NOT NULL AND c.ask_price_usdt < p.price_usd_cents/100.0')
+  if (options.onlyOpportunities) where.push(OPPORTUNITY_SQL)
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : ''
   const count = await dbQuery(`SELECT COUNT(*)::int AS count FROM collectibles c ${JOIN} ${clause}`, params)
   const limit = Math.min(Math.max(Number(options.limit) || 100, 1), 1000)
   const offset = Math.max(Number(options.offset) || 0, 0)
-  const rows = await dbQuery(`SELECT ${JOINED} FROM collectibles c ${JOIN} ${clause} ORDER BY CASE WHEN p.price_usd_cents IS NULL THEN -999999 ELSE (p.price_usd_cents/100.0-c.ask_price_usdt)/NULLIF(c.ask_price_usdt,0) END DESC,c.updated_at DESC LIMIT $${i++} OFFSET $${i++}`, [...params, limit, offset])
+  // Only these fixed SQL expressions/directions are allowed; never interpolate user SQL.
+  const sortExpression = options.sortBy === 'spreadUsd' ? SPREAD_SQL : ROI_SQL
+  const sortDirection = options.sortOrder === 'asc' ? 'ASC' : 'DESC'
+  const rows = await dbQuery(`SELECT ${JOINED} FROM collectibles c ${JOIN} ${clause} ORDER BY (${sortExpression}) ${sortDirection} NULLS LAST,c.updated_at DESC,c.token_id ASC LIMIT $${i++} OFFSET $${i++}`, [...params, limit, offset])
   return { data: rows.rows.map(mapRow), count: Number(count.rows?.[0]?.count || 0) }
 }
 
 async function getStats() {
-  const result = await dbQuery(`SELECT COUNT(*) FILTER(WHERE c.status='listed')::int total,COUNT(*) FILTER(WHERE c.status='listed' AND c.ask_price_usdt>0)::int with_ask,COALESCE(SUM(c.ask_price_usdt) FILTER(WHERE c.status='listed'),0) total_value,COUNT(*) FILTER(WHERE c.status='listed' AND p.price_usd_cents IS NOT NULL)::int with_index,COUNT(*) FILTER(WHERE c.status='listed' AND p.price_usd_cents IS NOT NULL AND c.ask_price_usdt<p.price_usd_cents/100.0)::int opportunities FROM collectibles c LEFT JOIN renaissos_prices p ON c.token_id=p.token_id`)
+  // Sum the positive spread across ALL current listings, not the current UI page.
+  const result = await dbQuery(`SELECT
+    COUNT(*) FILTER(WHERE c.status='listed')::int total,
+    COUNT(*) FILTER(WHERE c.status='listed' AND c.ask_price_usdt>0)::int with_ask,
+    COALESCE(SUM(c.ask_price_usdt) FILTER(WHERE c.status='listed'),0) total_value,
+    COUNT(*) FILTER(WHERE c.status='listed' AND p.price_usd_cents IS NOT NULL)::int with_index,
+    COUNT(*) FILTER(WHERE c.status='listed' AND ${OPPORTUNITY_SQL})::int opportunities,
+    COALESCE(SUM(p.price_usd_cents/100.0-c.ask_price_usdt)
+      FILTER(WHERE c.status='listed' AND ${OPPORTUNITY_SQL}),0) arbitrage_value_usd
+    FROM collectibles c ${JOIN}`)
   const r = result.rows?.[0] || {}
-  return { total: Number(r.total || 0), withAskPrice: Number(r.with_ask || 0), totalValue: Number(r.total_value || 0), withIndexPrice: Number(r.with_index || 0), opportunities: Number(r.opportunities || 0) }
+  return { total: Number(r.total || 0), withAskPrice: Number(r.with_ask || 0), totalValue: Number(r.total_value || 0), withIndexPrice: Number(r.with_index || 0), opportunities: Number(r.opportunities || 0), arbitrageValueUsd: Number(r.arbitrage_value_usd || 0) }
 }
 
 async function getLastSync() { const result = await dbQuery('SELECT * FROM sync_runs ORDER BY started_at DESC LIMIT 1'); return result.rows?.[0] || null }

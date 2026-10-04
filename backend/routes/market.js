@@ -7,7 +7,7 @@ router.get('/stats', async (_req, res) => {
 })
 router.get('/collectibles', async (req, res) => {
   try {
-    const result = await getCollectibles({ limit:req.query.limit, offset:req.query.offset, search:req.query.search, confidence:req.query.confidence, onlyOpportunities:req.query.onlyOpportunities === 'true', status:req.query.status || 'listed' })
+    const result = await getCollectibles({ limit:req.query.limit, offset:req.query.offset, search:req.query.search, confidence:req.query.confidence, onlyOpportunities:req.query.onlyOpportunities === 'true', status:req.query.status || 'listed', sortBy:req.query.sortBy, sortOrder:req.query.sortOrder })
     res.json({ collection: result.data, total: result.count })
   } catch (e) { res.status(500).json({ error: e.message }) }
 })

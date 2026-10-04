@@ -108,11 +108,10 @@ Dashboard 当前展示：
 
 - 已挂牌卡牌数量
 - 挂牌总价值
-- 已获得 Index 价格的卡牌数量
-- 套利候选数量
+- 可套利总价值：全市场当前挂牌卡牌的正价差之和（不受分页或筛选影响，未扣手续费，非保证收益）
 - Renaiss 挂牌价
-- Index `priceUsdCents` 与美元换算价
-- 价差与 ROI
+- Index 美元参考价（不显示美分原始值）
+- 价差与 ROI 独立可排序列（点击切换升序 / 降序，默认 ROI 降序）
 - Index `confidence`
 - 最近成交 / 更新时间
 - Renaiss 链接与 Index 链接
@@ -122,8 +121,8 @@ Dashboard 当前展示：
 - 简体中文、繁體中文、English、日本語、한국어
 - 名称、Token ID、Serial 搜索
 - `prime / high / medium / low` 置信度筛选
-- 只查看正价差套利候选
-- 分页浏览
+- 只查看可套利卡牌
+- 服务端全量排序后分页浏览；无有效价格的卡牌排在末尾
 - 一键注册 Renaiss
 - 一键关注 `@blueskylh1`
 - 访问项目 GitHub 仓库
@@ -229,10 +228,12 @@ frontend/dist/server   # SSR bundle
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
-| `GET` | `/api/market/stats` | 卡牌数量、挂牌总值、Index 覆盖量、套利候选数 |
+| `GET` | `/api/market/stats` | 卡牌数量、挂牌总值、可套利总价值 |
 | `GET` | `/api/market/collectibles` | 分页查询卡牌与套利字段 |
 | `GET` | `/api/market/collectibles/:tokenId` | 查询单张卡牌 |
 | `GET` | `/api/market/sync-status` | 查看最近同步记录 |
+
+`arbitrageValueUsd` 是当前所有正价差卡牌的理论总毛价差。
 
 ### 同步 API
 
@@ -335,3 +336,9 @@ curl -X POST http://127.0.0.1:3001/api/sync \
 **Renaiss Market v2** · 让挂牌价与市场参考价在同一张表里说话。
 
 </div>
+
+### 总价差与排序口径
+
+`GET /api/market/stats` 新增 `arbitrageValueUsd`，统计所有当前挂牌、挂牌价大于零且 Index 价格高于挂牌价的卡牌，累加 `Index 价格 / 100 - 挂牌价`（这里 Index 原始字段单位为美分）。该值是理论毛价差，不代表已实现利润，也不是买入这些卡牌所需的本金。
+
+`GET /api/market/collectibles` 支持 `sortBy=spreadUsd|roiPct` 与 `sortOrder=asc|desc`。默认 `roiPct` 降序，缺失值最后，排序在 `LIMIT/OFFSET` 分页前完成。
