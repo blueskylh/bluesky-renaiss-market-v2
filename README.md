@@ -128,6 +128,7 @@ Dashboard 当前展示：
 - 一键注册 Renaiss
 - 一键关注 `@blueskylh1`
 - 访问项目 GitHub 仓库
+- 访问 Renaiss 在售连号工具
 
 ## 🗂️ 项目结构
 
