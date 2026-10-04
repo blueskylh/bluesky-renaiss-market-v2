@@ -11,6 +11,16 @@ const maxRetries = Math.max(1, Number(process.env.RENAISSOS_MAX_RETRIES || 3))
 let nextRenaissRequest = 0
 let nextIndexRequest = 0
 let activeRun = null
+// The Surf DB proxy is rate-limited (~400 req/min); keep sync writes well below that
+// so dashboard reads still work while a sync is running.
+const intervalDb = Math.max(0, Number(process.env.DB_WRITE_INTERVAL_MS || 200))
+let nextDbWrite = 0
+async function dbWrite(sql, params) {
+  const wait = nextDbWrite - Date.now()
+  nextDbWrite = Math.max(Date.now(), nextDbWrite) + intervalDb
+  if (wait > 0) await sleep(wait)
+  return dbQuery(sql, params)
+}
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)) }
 async function gate(kind) {
@@ -22,9 +32,9 @@ async function gate(kind) {
 }
 
 function indexHeaders() {
-  if (!process.env.RENAISSOS_API_KEY || !process.env.RENAISSOS_API_SECRET) {
-    throw new Error('RENAISSOS_API_KEY and RENAISSOS_API_SECRET are required')
-  }
+  // Credentials are optional: the public Index API answers without them,
+  // but keys (if configured) give higher rate limits.
+  if (!process.env.RENAISSOS_API_KEY || !process.env.RENAISSOS_API_SECRET) return {}
   return {
     'X-Api-Key': process.env.RENAISSOS_API_KEY,
     'X-Api-Secret': process.env.RENAISSOS_API_SECRET,
@@ -48,10 +58,12 @@ async function getJson(url, kind, headers = {}) {
       const retryable = response.status === 429 || response.status >= 500
       if (!retryable || attempt === maxRetries - 1) throw lastError
       const retryAfter = Number(response.headers.get('retry-after') || 0)
+      // Anonymous Index quota resets daily (Retry-After can be ~20h) — don't hang the sync.
+      if (retryAfter > 60) throw new Error(`HTTP ${response.status}: quota exhausted, retry after ${retryAfter}s (configure RENAISSOS_API_KEY/SECRET)`)
       await sleep(retryAfter > 0 ? retryAfter * 1000 : 1000 * 2 ** attempt)
     } catch (error) {
       lastError = error
-      const retryable = error.name === 'AbortError' || /HTTP (429|5\d\d)/.test(error.message)
+      const retryable = error.name === 'AbortError' || (/HTTP (429|5\d\d)/.test(error.message) && !/quota exhausted/.test(error.message))
       if (!retryable || attempt === maxRetries - 1) throw error
       await sleep(1000 * 2 ** attempt)
     } finally {
@@ -266,11 +278,11 @@ async function getLastSync() { const result = await dbQuery('SELECT * FROM sync_
 async function getOne(tokenId) { const result = await dbQuery(`SELECT ${JOINED} FROM collectibles c ${JOIN} WHERE c.token_id=$1`, [tokenId]); return result.rows?.[0] ? mapRow(result.rows[0]) : null }
 
 async function upsertCard(card) {
-  await dbQuery(`INSERT INTO collectibles(token_id,name,set_name,card_number,pokemon_name,owner_address,ask_price_usdt,fmv_price_usd,front_image_url,grade,grading_company,year,language,serial,renaiss_url,status,source_updated_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'listed',$16,NOW()) ON CONFLICT(token_id) DO UPDATE SET name=EXCLUDED.name,set_name=EXCLUDED.set_name,card_number=EXCLUDED.card_number,pokemon_name=EXCLUDED.pokemon_name,owner_address=EXCLUDED.owner_address,ask_price_usdt=EXCLUDED.ask_price_usdt,fmv_price_usd=EXCLUDED.fmv_price_usd,front_image_url=EXCLUDED.front_image_url,grade=EXCLUDED.grade,grading_company=EXCLUDED.grading_company,year=EXCLUDED.year,language=EXCLUDED.language,serial=EXCLUDED.serial,renaiss_url=EXCLUDED.renaiss_url,status='listed',source_updated_at=EXCLUDED.source_updated_at,updated_at=NOW()`, [card.tokenId,card.name,card.setName,card.cardNumber,card.pokemonName,card.ownerAddress,card.askPrice,card.fmv,card.frontImageUrl,card.grade,card.gradingCompany,card.year,card.language,card.serial,card.renaissUrl,card.sourceUpdatedAt])
+  await dbWrite(`INSERT INTO collectibles(token_id,name,set_name,card_number,pokemon_name,owner_address,ask_price_usdt,fmv_price_usd,front_image_url,grade,grading_company,year,language,serial,renaiss_url,status,source_updated_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'listed',$16,NOW()) ON CONFLICT(token_id) DO UPDATE SET name=EXCLUDED.name,set_name=EXCLUDED.set_name,card_number=EXCLUDED.card_number,pokemon_name=EXCLUDED.pokemon_name,owner_address=EXCLUDED.owner_address,ask_price_usdt=EXCLUDED.ask_price_usdt,fmv_price_usd=EXCLUDED.fmv_price_usd,front_image_url=EXCLUDED.front_image_url,grade=EXCLUDED.grade,grading_company=EXCLUDED.grading_company,year=EXCLUDED.year,language=EXCLUDED.language,serial=EXCLUDED.serial,renaiss_url=EXCLUDED.renaiss_url,status='listed',source_updated_at=EXCLUDED.source_updated_at,updated_at=NOW()`, [card.tokenId,card.name,card.setName,card.cardNumber,card.pokemonName,card.ownerAddress,card.askPrice,card.fmv,card.frontImageUrl,card.grade,card.gradingCompany,card.year,card.language,card.serial,card.renaissUrl,card.sourceUpdatedAt])
 }
 
 async function upsertPrice(tokenId, data) {
-  await dbQuery(`INSERT INTO renaissos_prices(token_id,index_id,price_usd_cents,confidence,index_href,index_url,last_sale_at,index_updated_at,observed_at,status,match_method,error_message,raw_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,NOW(),$9,$10,$11,$12) ON CONFLICT(token_id) DO UPDATE SET index_id=EXCLUDED.index_id,price_usd_cents=EXCLUDED.price_usd_cents,confidence=EXCLUDED.confidence,index_href=EXCLUDED.index_href,index_url=EXCLUDED.index_url,last_sale_at=EXCLUDED.last_sale_at,index_updated_at=EXCLUDED.index_updated_at,observed_at=NOW(),status=EXCLUDED.status,match_method=EXCLUDED.match_method,error_message=EXCLUDED.error_message,raw_json=EXCLUDED.raw_json`, [tokenId,data.indexId||null,data.priceUsdCents==null?null:data.priceUsdCents,data.confidence||null,data.indexHref||null,data.indexUrl||null,data.lastSaleAt||null,data.indexUpdatedAt||null,data.status||'not_found',data.matchMethod||null,data.errorMessage||null,data.rawJson||null])
+  await dbWrite(`INSERT INTO renaissos_prices(token_id,index_id,price_usd_cents,confidence,index_href,index_url,last_sale_at,index_updated_at,observed_at,status,match_method,error_message,raw_json) VALUES($1,$2,$3,$4,$5,$6,$7,$8,NOW(),$9,$10,$11,$12) ON CONFLICT(token_id) DO UPDATE SET index_id=EXCLUDED.index_id,price_usd_cents=EXCLUDED.price_usd_cents,confidence=EXCLUDED.confidence,index_href=EXCLUDED.index_href,index_url=EXCLUDED.index_url,last_sale_at=EXCLUDED.last_sale_at,index_updated_at=EXCLUDED.index_updated_at,observed_at=NOW(),status=EXCLUDED.status,match_method=EXCLUDED.match_method,error_message=EXCLUDED.error_message,raw_json=EXCLUDED.raw_json`, [tokenId,data.indexId||null,data.priceUsdCents==null?null:data.priceUsdCents,data.confidence||null,data.indexHref||null,data.indexUrl||null,data.lastSaleAt||null,data.indexUpdatedAt||null,data.status||'not_found',data.matchMethod||null,data.errorMessage||null,data.rawJson||null])
 }
 
 async function markMissingAsUnlisted(tokenIds) {
@@ -282,8 +294,22 @@ async function markMissingAsUnlisted(tokenIds) {
   )
 }
 
+// Older deployments created `collectibles` with a NOT NULL `id` column (no default).
+// Give it a default so v2 upserts (keyed by token_id) work without touching existing rows.
+let legacyChecked = false
+async function ensureLegacyCompat() {
+  if (legacyChecked) return
+  await dbQuery(`DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='collectibles' AND column_name='id') THEN
+      ALTER TABLE collectibles ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;
+    END IF;
+  END $$`)
+  legacyChecked = true
+}
+
 async function runDailySync() {
   if (activeRun) return { ...activeRun, alreadyRunning: true }
+  await ensureLegacyCompat()
   const id = crypto.randomUUID(), started = new Date().toISOString()
   activeRun = { runId:id,status:'running',startedAt:started,totalCards:0,updatedCards:0,failedCards:0 }
   try {
